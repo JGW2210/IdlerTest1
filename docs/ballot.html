@@ -1,0 +1,1299 @@
+<title>Ashcombe — Design Charter &amp; Ballot</title>
+
+<style>
+  :root {
+    --ground:   #DBDAD3;
+    --surface:  #E9E8E1;
+    --raised:   #F3F2EC;
+    --ink:      #1C2325;
+    --ink-2:    #3D4749;
+    --muted:    #69746F;
+    --rule:     #C4C4BA;
+    --rule-hi:  #A8A99E;
+    --accent:   #2F7A63;
+    --accent-w: #DCE8E2;
+    --brass:    #8A6A22;
+    --brass-w:  #EBE2CB;
+    --crit:     #9C4234;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", "URW Palladio L", Georgia, serif;
+    --sans:  ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
+
+    --pad: clamp(1.15rem, 4vw, 2.75rem);
+    --rail: 4.75rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:   #111517;
+      --surface:  #191F21;
+      --raised:   #212A2C;
+      --ink:      #E0E5E1;
+      --ink-2:    #B2BCB8;
+      --muted:    #7E8C88;
+      --rule:     #2B3437;
+      --rule-hi:  #414D50;
+      --accent:   #5CBB9B;
+      --accent-w: #16302A;
+      --brass:    #C79A3E;
+      --brass-w:  #2E2718;
+      --crit:     #CF6B59;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:   #111517;
+    --surface:  #191F21;
+    --raised:   #212A2C;
+    --ink:      #E0E5E1;
+    --ink-2:    #B2BCB8;
+    --muted:    #7E8C88;
+    --rule:     #2B3437;
+    --rule-hi:  #414D50;
+    --accent:   #5CBB9B;
+    --accent-w: #16302A;
+    --brass:    #C79A3E;
+    --brass-w:  #2E2718;
+    --crit:     #CF6B59;
+  }
+
+  :root[data-theme="light"] {
+    --ground:   #DBDAD3;
+    --surface:  #E9E8E1;
+    --raised:   #F3F2EC;
+    --ink:      #1C2325;
+    --ink-2:    #3D4749;
+    --muted:    #69746F;
+    --rule:     #C4C4BA;
+    --rule-hi:  #A8A99E;
+    --accent:   #2F7A63;
+    --accent-w: #DCE8E2;
+    --brass:    #8A6A22;
+    --brass-w:  #EBE2CB;
+    --crit:     #9C4234;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 0 var(--pad) 5rem;
+  }
+
+  /* ---------- shared type ---------- */
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .prose { max-width: 68ch; }
+  .prose p { margin: 0 0 1rem; color: var(--ink-2); }
+  .prose p:last-child { margin-bottom: 0; }
+  .prose strong { color: var(--ink); font-weight: 650; }
+
+  em.term {
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: 0.9em;
+    color: var(--accent);
+  }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    border-bottom: 1px solid var(--rule-hi);
+    padding: clamp(2.25rem, 6vw, 4rem) 0 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+  }
+
+  .masthead h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(2.4rem, 7vw, 4.1rem);
+    line-height: 1.02;
+    letter-spacing: -0.018em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .masthead h1 .sub {
+    display: block;
+    font-size: 0.42em;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--muted);
+    letter-spacing: 0;
+    margin-top: 0.7rem;
+  }
+
+  .standfirst {
+    font-family: var(--serif);
+    font-size: clamp(1.0625rem, 2.1vw, 1.3125rem);
+    line-height: 1.5;
+    color: var(--ink-2);
+    max-width: 58ch;
+    margin: 0;
+  }
+
+  .colophon {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.75rem;
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-top: 0.35rem;
+  }
+  .colophon span { white-space: nowrap; }
+  .colophon b { color: var(--ink-2); font-weight: 500; }
+
+  /* ---------- section scaffolding ---------- */
+
+  .sect {
+    display: grid;
+    grid-template-columns: var(--rail) minmax(0, 1fr);
+    gap: 0 2rem;
+    padding: clamp(2.5rem, 6vw, 4rem) 0 0;
+  }
+
+  .sect .rail {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-top: 0.55rem;
+    border-top: 2px solid var(--ink);
+  }
+
+  .sect .bay { border-top: 1px solid var(--rule-hi); padding-top: 0.55rem; }
+
+  .sect h2 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(1.5rem, 3.4vw, 2.0625rem);
+    line-height: 1.16;
+    letter-spacing: -0.012em;
+    margin: 0 0 0.85rem;
+    text-wrap: balance;
+  }
+
+  @media (max-width: 720px) {
+    .sect { grid-template-columns: 1fr; gap: 0; }
+    .sect .rail { border-top: 2px solid var(--ink); padding-bottom: 0.75rem; }
+    .sect .bay { border-top: 0; padding-top: 0; }
+  }
+
+  /* ---------- map plate ---------- */
+
+  .plate {
+    margin-top: 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .plate-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem 1.25rem;
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--rule);
+    background: var(--raised);
+  }
+
+  .plate-body { padding: 0.5rem; }
+
+  #mapCanvas { display: block; width: 100%; height: clamp(300px, 40vw, 470px); }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.25rem;
+    padding: 0.75rem 1rem 0.9rem;
+    border-top: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .legend i {
+    display: inline-block;
+    width: 0.6rem; height: 0.6rem;
+    margin-right: 0.45rem;
+    border-radius: 1px;
+    vertical-align: baseline;
+  }
+
+  /* ---------- findings ---------- */
+
+  .findings {
+    margin-top: 1.75rem;
+    display: grid;
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+  }
+
+  .finding {
+    background: var(--surface);
+    padding: 1.15rem 1.25rem;
+    display: grid;
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    gap: 0.35rem 1.75rem;
+    align-items: start;
+  }
+
+  .finding h3 {
+    font-family: var(--serif);
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.25;
+    margin: 0;
+    letter-spacing: -0.005em;
+  }
+  .finding .verdict {
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+  .finding p { margin: 0; color: var(--ink-2); font-size: 0.9375rem; }
+  .finding p + p { margin-top: 0.6rem; }
+
+  @media (max-width: 720px) {
+    .finding { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- rune composer ---------- */
+
+  .rune {
+    margin-top: 1.5rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+  }
+  @media (max-width: 860px) { .rune { grid-template-columns: 1fr; } }
+
+  .rune-in, .rune-out { background: var(--surface); padding: 1.15rem 1.25rem; }
+  .rune-out { background: var(--raised); }
+
+  .glyphrow + .glyphrow { margin-top: 1rem; }
+  .glyphrow .eyebrow { margin-bottom: 0.5rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+  .chip {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-2);
+    background: var(--raised);
+    border: 1px solid var(--rule-hi);
+    border-radius: 2px;
+    padding: 0.28rem 0.6rem;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--ink); }
+  .chip[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--ground);
+    font-weight: 600;
+  }
+  .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .spellname {
+    font-family: var(--serif);
+    font-size: clamp(1.35rem, 3.2vw, 1.75rem);
+    font-weight: 600;
+    line-height: 1.18;
+    margin: 0.15rem 0 0.2rem;
+    letter-spacing: -0.01em;
+  }
+  .truename {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    margin: 0 0 0.9rem;
+  }
+  .spelltext {
+    margin: 0 0 1rem;
+    font-size: 0.9375rem;
+    color: var(--ink-2);
+    min-height: 4.5em;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+  }
+  .stat { background: var(--surface); padding: 0.6rem 0.7rem; }
+  .stat b {
+    display: block;
+    font-family: var(--mono);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+  .stat span {
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ---------- tier ladder ---------- */
+
+  .ladder {
+    margin-top: 1.5rem;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .rung {
+    display: grid;
+    grid-template-columns: 2.75rem minmax(7rem, 12rem) minmax(0, 1fr) 4.75rem;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.42rem 1rem;
+    border-bottom: 1px solid var(--rule);
+    font-size: 0.875rem;
+  }
+  .rung:last-child { border-bottom: 0; }
+
+  .rung .t {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .rung .nm { color: var(--ink); }
+  .rung .nm small { color: var(--muted); font-size: 0.8125rem; }
+  .rung .bar { height: 6px; background: var(--rule); border-radius: 1px; overflow: hidden; }
+  .rung .bar i { display: block; height: 100%; background: var(--accent); }
+  .rung .v {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--ink-2);
+  }
+  .rung.mythic .bar i { background: var(--brass); }
+  .rung.mythic .nm { color: var(--brass); }
+
+  .relics {
+    padding: 0.9rem 1rem 1rem;
+    border-top: 1px solid var(--rule-hi);
+    background: var(--raised);
+  }
+  .relic-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.55rem; }
+  .relic-chips span {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.05em;
+    color: var(--brass);
+    border: 1px solid var(--brass);
+    background: var(--brass-w);
+    border-radius: 2px;
+    padding: 0.22rem 0.5rem;
+  }
+
+  @media (max-width: 620px) {
+    .rung { grid-template-columns: 2.25rem minmax(0, 1fr) 4.25rem; }
+    .rung .bar { display: none; }
+  }
+
+  /* ---------- ballot ---------- */
+
+  .article {
+    border-top: 1px solid var(--rule-hi);
+    padding: 1.6rem 0 1.5rem;
+    display: grid;
+    grid-template-columns: var(--rail) minmax(0, 1fr);
+    gap: 0 2rem;
+  }
+  .article:first-of-type { border-top: 2px solid var(--ink); }
+
+  .article .num {
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    padding-top: 0.2rem;
+  }
+
+  .article h3 {
+    font-family: var(--serif);
+    font-size: 1.3125rem;
+    font-weight: 600;
+    line-height: 1.22;
+    margin: 0 0 0.2rem;
+    letter-spacing: -0.008em;
+  }
+  .article .ask { margin: 0 0 0.9rem; color: var(--muted); font-size: 0.9375rem; max-width: 62ch; }
+
+  .opts { display: grid; gap: 0.4rem; }
+
+  .opt {
+    display: grid;
+    grid-template-columns: 2.6rem minmax(0, 1fr);
+    gap: 0 0.75rem;
+    align-items: start;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--rule);
+    border-radius: 2px;
+    padding: 0.6rem 0.85rem;
+    cursor: pointer;
+    transition: border-color 120ms ease, background 120ms ease;
+  }
+  .opt:hover { border-color: var(--rule-hi); border-left-color: var(--accent); }
+  .opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .opt[aria-pressed="true"] {
+    background: var(--accent-w);
+    border-color: var(--accent);
+    border-left-color: var(--accent);
+  }
+
+  .opt .code {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    padding-top: 0.12rem;
+  }
+  .opt[aria-pressed="true"] .code { color: var(--accent); }
+
+  .opt .ttl {
+    font-weight: 620;
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    color: var(--ink);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .opt .dsc { font-size: 0.875rem; color: var(--ink-2); line-height: 1.5; margin-top: 0.12rem; max-width: 70ch; }
+
+  .rec {
+    font-family: var(--mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--brass);
+    border: 1px solid var(--brass);
+    background: var(--brass-w);
+    border-radius: 2px;
+    padding: 0.1rem 0.38rem;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 720px) {
+    .article { grid-template-columns: 1fr; }
+    .article .num { padding-bottom: 0.4rem; }
+  }
+
+  /* ---------- tally ---------- */
+
+  .tally {
+    position: sticky;
+    bottom: 0;
+    margin-top: 2rem;
+    background: var(--raised);
+    border: 1px solid var(--rule-hi);
+    border-radius: 2px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    box-shadow: 0 -6px 24px -18px rgba(0,0,0,0.75);
+  }
+  .tally .out {
+    flex: 1 1 18rem;
+    min-width: 0;
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.03em;
+    color: var(--ink);
+    overflow-x: auto;
+    white-space: nowrap;
+    padding: 0.15rem 0;
+  }
+  .tally .out.empty { color: var(--muted); }
+
+  .btn {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ground);
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 2px;
+    padding: 0.45rem 0.85rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn.ghost { background: transparent; color: var(--muted); border-color: var(--rule-hi); }
+  .btn.ghost:hover { color: var(--ink); border-color: var(--ink-2); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- footer ---------- */
+
+  .footer {
+    margin-top: 3.5rem;
+    padding-top: 1.25rem;
+    border-top: 2px solid var(--ink);
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.75rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Design charter &amp; decision ballot — draft 01</p>
+    <h1>Ashcombe<span class="sub">An idle realm, begun with one villager and a borrowed pick</span></h1>
+    <p class="standfirst">Twelve decisions stand between this brief and a working framework. Below is what I found when I pulled the brief apart, what I would build, and where I need you to choose.</p>
+    <div class="colophon">
+      <span><b>Repo</b> IdlerTest1</span>
+      <span><b>Scope</b> Web app framework</span>
+      <span><b>Open questions</b> 12</span>
+      <span><b>Status</b> Nothing built yet</span>
+    </div>
+  </header>
+
+  <!-- ============ MAP ============ -->
+  <section class="sect">
+    <div class="rail">Plate&nbsp;i</div>
+    <div class="bay">
+      <h2>The map is the progress bar</h2>
+      <div class="prose">
+        <p>Numbers rising are a weak progression signal; a map filling in is a strong one. So the map is not a menu with scenery — it is the primary view, and every other system reports to it. You begin owning one hex and standing in it.</p>
+      </div>
+
+      <div class="plate">
+        <div class="plate-head">
+          <p class="eyebrow">Opening cantref — ring 1 known, ring 2 under fog</p>
+          <p class="eyebrow" style="color:var(--accent)">7 of 19 hexes revealed</p>
+        </div>
+        <div class="plate-body"><canvas id="mapCanvas" aria-label="Hex map of the starting region: the village of Ashcombe surrounded by six revealed hexes and twelve unexplored ones."></canvas></div>
+        <div class="legend">
+          <span><i style="background:var(--accent)"></i>Held</span>
+          <span><i style="background:var(--rule-hi)"></i>Known, unclaimed</span>
+          <span><i style="background:var(--brass)"></i>Relic site</span>
+          <span><i style="border:1px dashed var(--rule-hi)"></i>Unscouted</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SCRUTINY ============ -->
+  <section class="sect">
+    <div class="rail">Part&nbsp;i</div>
+    <div class="bay">
+      <h2>What I found in the brief</h2>
+      <div class="prose">
+        <p>The setting arc is the strongest thing here. Villager → landholder → ruler works because the <strong>unit of play changes as you grow</strong>: first you swing the pick, then you own the mine, then you tax the valley the mine sits in. Most idle games only scale numbers. This scales verbs. Four things need resolving before any of it can be built.</p>
+      </div>
+
+      <div class="findings">
+
+        <div class="finding">
+          <div>
+            <span class="verdict">Tension</span>
+            <h3>“Idle” and “in-depth” pull opposite ways</h3>
+          </div>
+          <div>
+            <p>Idle rewards absence. Depth rewards attention. Every game in this space picks a specific reconciliation and it dictates the whole architecture. The one I would pick: <strong>one focused action at full rate, plus background slots at reduced rate</strong> — because the background slots <em>are</em> the civilisation layer. Your first hired apprentice is your second slot. Realm growth and throughput growth become the same mechanic in two costumes, rather than a strategy game bolted onto an RPG.</p>
+            <p>Tuning target: an attentive hour should be worth about <em class="term">1.8×</em> an idle hour. Enough to reward presence; not enough to punish a day at work.</p>
+          </div>
+        </div>
+
+        <div class="finding">
+          <div>
+            <span class="verdict">Correction</span>
+            <h3>Shared parent XP must add, not divide</h3>
+          </div>
+          <div>
+            <p>If a one-handed parent skill <em>splits</em> XP with its children, every weapon swap feels like a tax and players lock onto one weapon by hour two. Instead the child takes <strong>100%</strong> and the parent takes <strong>an additional 30%</strong> — created, not divided.</p>
+            <p>Then make the parent gate the child: a child may not exceed <em class="term">parent + 10</em>. Now the cheapest route to pushing your favourite weapon higher runs through its siblings, and breadth becomes a strategy instead of a chore. Parent levels grant accuracy, stamina economy and shared Mastery Points; child levels grant scaling, crit behaviour and that weapon’s techniques.</p>
+          </div>
+        </div>
+
+        <div class="finding">
+          <div>
+            <span class="verdict">Warning</span>
+            <h3>Count the bars before you commit</h3>
+          </div>
+          <div>
+            <p>At the granularity the brief implies — sword, sabre, axe, mace, dagger, rapier and so on — five combat parents land at roughly <strong>30 combat skills before a single pickaxe is swung</strong>. Total north of 45. RuneScape ships 23.</p>
+            <p>Forty-five bars reads as homework, and every one needs content at every tier or it becomes a dead limb. My counter: three children per parent, with weapon <em>variants</em> living inside a child. A sabre and an arming sword are both Blade — different speed, reach and scaling, no extra bar. Twenty combat skills that are all alive beats thirty where nine are abandoned.</p>
+          </div>
+        </div>
+
+        <div class="finding">
+          <div>
+            <span class="verdict">Opportunity</span>
+            <h3>The setting hands you a perfect reset</h3>
+          </div>
+          <div>
+            <p>Idle games need a loop longer than “reach the next tier”, but maps and realms resist being wiped. Feudalism solves this for free: <strong>succession</strong>. Your character ages, retires or falls, and an heir inherits a fraction of what was built plus permanent bloodline traits earned from what the parent actually did. The realm, the map and your knowledge persist; the person resets.</p>
+            <p>It is a prestige system that never breaks the fiction — the only genre where the reset button is also the story.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RUNES ============ -->
+  <section class="sect">
+    <div class="rail">Part&nbsp;ii</div>
+    <div class="bay">
+      <h2>Runes should be a grammar, not a shop</h2>
+      <div class="prose">
+        <p>“Elemental runes” plus “magical configurations in the loadout” is the seed of the best differentiator in this brief — provided magic is something you <strong>compose</strong> rather than something you buy. A spell is a sentence: an element, a form it takes, modifiers, and a trigger that fires it. Cost and effect are computed from the parts, so forty glyphs generate thousands of legitimate spells and the limiting factor is your cleverness, not the drop table.</p>
+        <p>Glyphs are found — in ruins, dungeon depths, distant tutors, and paid experimentation. Finished spells are inscribed onto <strong>Rune Tablets</strong>, which are equipment. Try it:</p>
+      </div>
+
+      <div class="rune">
+        <div class="rune-in">
+          <div class="glyphrow">
+            <p class="eyebrow">Element — one</p>
+            <div class="chips" id="rElement"></div>
+          </div>
+          <div class="glyphrow">
+            <p class="eyebrow">Form — one</p>
+            <div class="chips" id="rForm"></div>
+          </div>
+          <div class="glyphrow">
+            <p class="eyebrow">Modifiers — up to three</p>
+            <div class="chips" id="rMod"></div>
+          </div>
+          <div class="glyphrow">
+            <p class="eyebrow">Trigger — one</p>
+            <div class="chips" id="rTrig"></div>
+          </div>
+        </div>
+        <div class="rune-out">
+          <p class="eyebrow">Inscribed spell</p>
+          <h3 class="spellname" id="spellName">—</h3>
+          <p class="truename" id="trueName">—</p>
+          <p class="spelltext" id="spellText">Select glyphs to compose a spell.</p>
+          <div class="stats">
+            <div class="stat"><b id="sPower">—</b><span>Power</span></div>
+            <div class="stat"><b id="sCost">—</b><span>Mana</span></div>
+            <div class="stat"><b id="sCast">—</b><span>Cast</span></div>
+            <div class="stat"><b id="sSlots">—</b><span>Glyphs</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MATERIALS ============ -->
+  <section class="sect">
+    <div class="rail">Part&nbsp;iii</div>
+    <div class="bay">
+      <h2>Twelve tiers, and the problem underneath them</h2>
+      <div class="prose">
+        <p>A pure ladder has a hidden cost: <strong>tier 9 deletes tiers 1 through 8</strong>, and with them the regions, recipes and skills attached to those tiers. Roughly two thirds of everything you build dies on contact with the next rung.</p>
+        <p>The fix is two extra axes. <strong>Alloys</strong> — your “special steel variants”, promoted from flavour to a real system — give co-equal choices <em>within</em> a tier rather than above it. <strong>Quality</strong>, from Crude to Legendary, means a Masterwork Steel blade can out-cut a Crude Mithral one, so old materials stay worth mining. Power climbs at <em class="term">1.75×</em> per tier while cost climbs at <em class="term">2.30×</em> — each rung is a real jump that takes visibly longer to reach.</p>
+      </div>
+
+      <div class="ladder">
+        <div id="ladderRows"></div>
+        <div class="relics">
+          <p class="eyebrow">Relic strata — not craftable at any smithing level</p>
+          <div class="relic-chips">
+            <span>Dragonbone</span><span>Heartwood of the First Oak</span><span>Sanguine Crystal</span><span>Fae-glass</span><span>Angelsteel</span><span>Chronite</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BALLOT ============ -->
+  <section class="sect">
+    <div class="rail">Part&nbsp;iv</div>
+    <div class="bay">
+      <h2>The ballot</h2>
+      <div class="prose">
+        <p>Twelve decisions, ordered so that the foundational ones come first — later articles depend on earlier ones. Click your picks and the tally at the foot of the page builds a string you can hand straight back to me. Marked recommendations are opinions with reasons attached, not conclusions; override any of them.</p>
+      </div>
+
+      <div id="ballot"></div>
+
+      <div class="tally">
+        <p class="eyebrow" style="flex:0 0 auto">Your picks</p>
+        <div class="out empty" id="tallyOut">Nothing selected yet</div>
+        <button class="btn ghost" id="fillRec" type="button">Take recommended</button>
+        <button class="btn ghost" id="clearAll" type="button">Clear</button>
+        <button class="btn" id="copyPicks" type="button">Copy</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">
+    <span>Ashcombe · design charter draft 01</span>
+    <span>Full specification in docs/DESIGN-CHARTER.md</span>
+    <span>Nothing committed until the ballot returns</span>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function tok(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  /* ================= MAP ================= */
+
+  var REGIONS = {
+    "0,0":   { name: "Ashcombe",        note: "village",     kind: "held" },
+    "1,-1":  { name: "Greyhollow",      note: "mine",        kind: "known" },
+    "1,0":   { name: "Barrowdeep",      note: "dungeon",     kind: "known" },
+    "0,1":   { name: "The Fallow",      note: "plains",      kind: "known" },
+    "-1,1":  { name: "Aldermarch",      note: "town",        kind: "known" },
+    "-1,0":  { name: "Tanglewood",      note: "forest",      kind: "known" },
+    "0,-1":  { name: "Stonewatch",      note: "ruin",        kind: "relic" }
+  };
+
+  var canvas = document.getElementById("mapCanvas");
+  var ctx = canvas.getContext("2d");
+  var reveal = reduceMotion ? 1 : 0;
+
+  function hexDist(q, r) {
+    return (Math.abs(q) + Math.abs(r) + Math.abs(q + r)) / 2;
+  }
+
+  function drawHex(cx, cy, size) {
+    ctx.beginPath();
+    for (var i = 0; i < 6; i++) {
+      var a = Math.PI / 180 * (60 * i);
+      var x = cx + size * Math.cos(a);
+      var y = cy + size * Math.sin(a);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+  }
+
+  function drawMap() {
+    var dpr = window.devicePixelRatio || 1;
+    var w = canvas.clientWidth;
+    var h = canvas.clientHeight;
+    if (!w || !h) return;
+
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    var C = {
+      surface: tok("--surface"), raised: tok("--raised"), rule: tok("--rule"),
+      ruleHi: tok("--rule-hi"), ink: tok("--ink"), ink2: tok("--ink-2"),
+      muted: tok("--muted"), accent: tok("--accent"), accentW: tok("--accent-w"),
+      brass: tok("--brass"), brassW: tok("--brass-w"), ground: tok("--ground")
+    };
+
+    /* a radius-2 flat-top field spans 8·size wide by 8.66·size tall */
+    var size = Math.max(22, Math.min(w / 8.4, h / 9.1));
+    var ox = w / 2;
+    var oy = h / 2;
+
+    var cells = [];
+    for (var q = -2; q <= 2; q++) {
+      for (var r = -2; r <= 2; r++) {
+        var d = hexDist(q, r);
+        if (d <= 2) cells.push({ q: q, r: r, d: d });
+      }
+    }
+    cells.sort(function (a, b) { return a.d - b.d; });
+
+    cells.forEach(function (c) {
+      var t = Math.max(0, Math.min(1, (reveal * 3) - c.d));
+      if (t <= 0) return;
+
+      var cx = ox + size * 1.5 * c.q;
+      var cy = oy + size * Math.sqrt(3) * (c.r + c.q / 2);
+      var reg = REGIONS[c.q + "," + c.r];
+
+      ctx.save();
+      ctx.globalAlpha = t;
+      drawHex(cx, cy, size * 0.94);
+
+      if (!reg) {
+        ctx.fillStyle = C.surface;
+        ctx.fill();
+        ctx.setLineDash([3, 4]);
+        ctx.strokeStyle = C.ruleHi;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+        return;
+      }
+
+      if (reg.kind === "held")       { ctx.fillStyle = C.accentW; }
+      else if (reg.kind === "relic") { ctx.fillStyle = C.brassW; }
+      else                           { ctx.fillStyle = C.raised; }
+      ctx.fill();
+
+      ctx.strokeStyle = reg.kind === "held" ? C.accent : (reg.kind === "relic" ? C.brass : C.ruleHi);
+      ctx.lineWidth = reg.kind === "held" ? 2 : 1;
+      ctx.stroke();
+
+      /* activity nodes — a row above the label, never crossing it */
+      var pips = reg.kind === "held" ? 4 : (reg.kind === "relic" ? 2 : 3);
+      ctx.fillStyle = reg.kind === "relic" ? C.brass : (reg.kind === "held" ? C.accent : C.muted);
+      var gap = size * 0.17;
+      var y0 = cy - size * 0.42;
+      for (var p = 0; p < pips; p++) {
+        var px = cx + (p - (pips - 1) / 2) * gap;
+        ctx.beginPath();
+        ctx.arc(px, y0, size * 0.045, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = reg.kind === "relic" ? C.brass : C.ink;
+      ctx.font = "600 " + Math.round(size * 0.235) + "px " + tok("--serif");
+      ctx.fillText(reg.name, cx, cy + size * 0.08);
+
+      ctx.fillStyle = C.muted;
+      ctx.font = Math.round(size * 0.155) + "px " + tok("--mono");
+      ctx.fillText(reg.note.toUpperCase(), cx, cy + size * 0.34);
+
+      ctx.restore();
+    });
+  }
+
+  function animate() {
+    if (reveal < 1) {
+      reveal = Math.min(1, reveal + 0.014);
+      drawMap();
+      requestAnimationFrame(animate);
+    } else {
+      drawMap();
+    }
+  }
+
+  /* ================= RUNE GRAMMAR ================= */
+
+  var ELEMENTS = [
+    { k: "Fire",  root: "Ignis",   pow: 1.25, note: "burns for 30% of the hit over 6s" },
+    { k: "Frost", root: "Glacies", pow: 1.00, note: "slows the target by 35%" },
+    { k: "Storm", root: "Fulgur",  pow: 1.10, note: "doubles critical chance against wet or metal-clad foes" },
+    { k: "Stone", root: "Petra",   pow: 1.15, note: "strips 20 armour on hit" },
+    { k: "Gale",  root: "Ventus",  pow: 0.85, note: "casts 25% faster and can displace" },
+    { k: "Gloam", root: "Umbra",   pow: 1.05, note: "returns 15% of damage dealt as health" }
+  ];
+
+  var FORMS = [
+    { k: "Bolt",  suf: "-ictus",  pow: 34,  cost: 8,  cast: 0.9, note: "a single projectile" },
+    { k: "Nova",  suf: "-fractum",pow: 26,  cost: 22, cast: 1.8, note: "erupts around you, striking everything within 6m" },
+    { k: "Beam",  suf: "-lumen",  pow: 41,  cost: 18, cast: 1.5, note: "a sustained line that pierces the first two foes" },
+    { k: "Ward",  suf: "-scutum", pow: 18,  cost: 14, cast: 1.1, note: "a shield absorbing damage for 12s" },
+    { k: "Brand", suf: "-morsus", pow: 12,  cost: 12, cast: 0.7, note: "a mark that deals damage every second for 10s" },
+    { k: "Sigil", suf: "-locus",  pow: 22,  cost: 20, cast: 2.0, note: "a rune on the ground that triggers when stepped on" },
+    { k: "Chain", suf: "-nexum",  pow: 24,  cost: 16, cast: 1.3, note: "leaps between up to 4 foes, losing 15% each jump" },
+    { k: "Weave", suf: "-textum", pow: 15,  cost: 15, cast: 1.6, note: "a lasting enhancement on you or an ally" }
+  ];
+
+  var MODS = [
+    { k: "Amplify", pow: 1.40, cost: 1.55, cast: 1.15, note: "raises power sharply" },
+    { k: "Split",   pow: 0.62, cost: 1.30, cast: 1.00, note: "divides into three weaker instances" },
+    { k: "Pierce",  pow: 1.10, cost: 1.20, cast: 1.00, note: "ignores 40% of resistance" },
+    { k: "Linger",  pow: 1.15, cost: 1.35, cast: 1.10, note: "persists for twice as long" },
+    { k: "Hasten",  pow: 0.88, cost: 1.10, cast: 0.55, note: "cuts cast time hard" },
+    { k: "Echo",    pow: 1.30, cost: 1.70, cast: 1.20, note: "repeats once after 2s" },
+    { k: "Siphon",  pow: 0.95, cost: 0.72, cast: 1.05, note: "refunds mana on hit" },
+    { k: "Empower", pow: 1.22, cost: 1.45, cast: 1.30, note: "scales with your Sorcery level" }
+  ];
+
+  var TRIGGERS = [
+    { k: "On Cast",       note: "when you cast it deliberately" },
+    { k: "On Hit",        note: "automatically whenever you land a weapon strike" },
+    { k: "On Kill",       note: "automatically whenever a foe falls" },
+    { k: "On Block",      note: "automatically whenever you block an attack" },
+    { k: "Below 30% HP",  note: "automatically the moment you drop below a third of your health" }
+  ];
+
+  var pick = { el: 0, form: 0, mods: [], trig: 0 };
+
+  function chipRow(host, list, mode, key) {
+    host.innerHTML = "";
+    list.forEach(function (item, i) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "chip";
+      b.textContent = item.k;
+      var on = mode === "multi" ? pick.mods.indexOf(i) !== -1 : pick[key] === i;
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.addEventListener("click", function () {
+        if (mode === "multi") {
+          var at = pick.mods.indexOf(i);
+          if (at !== -1) pick.mods.splice(at, 1);
+          else if (pick.mods.length < 3) pick.mods.push(i);
+        } else {
+          pick[key] = i;
+        }
+        renderRunes();
+      });
+      host.appendChild(b);
+    });
+  }
+
+  function renderRunes() {
+    chipRow(document.getElementById("rElement"), ELEMENTS, "one", "el");
+    chipRow(document.getElementById("rForm"), FORMS, "one", "form");
+    chipRow(document.getElementById("rMod"), MODS, "multi", "mods");
+    chipRow(document.getElementById("rTrig"), TRIGGERS, "one", "trig");
+
+    var el = ELEMENTS[pick.el];
+    var fm = FORMS[pick.form];
+    var tg = TRIGGERS[pick.trig];
+    var ms = pick.mods.map(function (i) { return MODS[i]; });
+
+    var pow = fm.pow * el.pow;
+    var cost = fm.cost;
+    var cast = fm.cast;
+    ms.forEach(function (m) { pow *= m.pow; cost *= m.cost; cast *= m.cast; });
+
+    var prefix = ms.map(function (m) { return m.k; }).join(" ");
+    document.getElementById("spellName").textContent =
+      (prefix ? prefix + " " : "") + el.k + " " + fm.k;
+    document.getElementById("trueName").textContent =
+      (el.root + fm.suf + (ms.length ? " · " + ms.map(function (m) { return m.k.toLowerCase(); }).join(" · ") : "")).toUpperCase();
+
+    var sentence = "Fires " + tg.note + ". " + cap(fm.note) + ", and " + el.note + ".";
+    if (ms.length) {
+      sentence += " It " + ms.map(function (m) { return m.note; }).join(", and ") + ".";
+    }
+    document.getElementById("spellText").textContent = sentence;
+
+    document.getElementById("sPower").textContent = Math.round(pow);
+    document.getElementById("sCost").textContent = Math.round(cost);
+    document.getElementById("sCast").textContent = cast.toFixed(1) + "s";
+    document.getElementById("sSlots").textContent = (2 + ms.length) + "/6";
+  }
+
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  /* ================= TIER LADDER ================= */
+
+  var TIERS = [
+    ["Copper", "tutorial metal"],
+    ["Bronze", "first alloy"],
+    ["Iron", ""],
+    ["Steel", ""],
+    ["Blacksteel · Sunsteel · Frostiron", "three co-equal alloys"],
+    ["Argentine", "first to hold enchantment"],
+    ["Mithral", ""],
+    ["Adamant", ""],
+    ["Orichalcum", ""],
+    ["Voidiron", "magical forging only"],
+    ["Meteoric", "from map events, not mines"],
+    ["Aurelith", "craft ceiling"]
+  ];
+
+  function renderLadder() {
+    var host = document.getElementById("ladderRows");
+    var max = Math.log(10 * Math.pow(1.75, 11));
+    var min = Math.log(10);
+    host.innerHTML = "";
+    TIERS.forEach(function (t, i) {
+      var power = 10 * Math.pow(1.75, i);
+      var pct = ((Math.log(power) - min) / (max - min)) * 92 + 8;
+      var row = document.createElement("div");
+      row.className = "rung" + (i >= 9 ? " mythic" : "");
+      row.innerHTML =
+        '<span class="t">T' + (i + 1) + '</span>' +
+        '<span class="nm">' + t[0] + (t[1] ? ' <small>— ' + t[1] + '</small>' : '') + '</span>' +
+        '<span class="bar"><i style="width:' + pct.toFixed(1) + '%"></i></span>' +
+        '<span class="v">' + Math.round(power).toLocaleString() + '</span>';
+      host.appendChild(row);
+    });
+  }
+
+  /* ================= BALLOT ================= */
+
+  var ARTICLES = [
+    { n: "I", t: "Shape of the core loop", ask: "How does time actually turn into progress?", o: [
+      ["Single Focus", "One action at a time; everything else is menus. Proven, simple, but a civilisation layer sits awkwardly on top.", 0],
+      ["Focus &amp; Retinue", "One focused action at full rate plus background slots at reduced rate. Slots are the master currency — hiring someone to fill one is how the realm begins.", 1],
+      ["Full Assignment", "You never act directly; you allocate population to jobs. Scales superbly, but the character stops being a character.", 0],
+      ["Expedition", "You configure loadouts and dispatch timed runs. Great for dungeons, weak for steady economy.", 0]
+    ]},
+    { n: "II", t: "Offline progression", ask: "What happens across the eight hours you are not here — and how do random outcomes resolve when nobody is watching?", o: [
+      ["Deterministic accrual, 12h cap", "Yields computed at expected value; rare drops resolve as fractional accumulators so they stay fair and land instantly. Cap raisable to 36h.", 1],
+      ["Seeded re-simulation", "Replay the real tick stream on a seeded RNG and show a summary reel of what happened. Most faithful, slowest to compute.", 0],
+      ["Unlimited at 50%", "No cap; permanently halved rate while away.", 0],
+      ["Banked hours", "Short 4h cap, but unspent time banks into a pool you later spend at full rate on a chosen activity.", 0]
+    ]},
+    { n: "III", t: "The long arc", ask: "What keeps this going past the last tier?", o: [
+      ["Bloodline &amp; Succession", "Characters age. An heir inherits a percentage plus permanent traits earned from what the parent did. Map, realm and knowledge persist; the person resets. Prestige that never breaks the fiction.", 1],
+      ["No reset", "One continuous climb. Honest, but demands an enormous volume of content.", 0],
+      ["Ages of the Realm", "The realm advances an Age; technology and production reset for large multipliers; the map persists.", 0],
+      ["Both", "Legacy for the character, Ages for the realm, running on different cadences.", 0]
+    ]},
+    { n: "IV", t: "Combat resolution", ask: "What actually happens when swords meet — and are techniques decisions or decorations?", o: [
+      ["Gambit auto-battler", "Combat resolves itself, driven by your priority list of conditional rules — <em class='term'>if target.hp &lt; 30% and stamina &gt; 25 → Execute</em>. Theorycrafting becomes the gameplay, and it stays fully idle-compatible.", 1],
+      ["Auto with interrupts", "Auto by default, but banked charges let you step in for burst windows and boss mechanics.", 0],
+      ["Turn-based dungeons only", "Auto out in the world, tactical turn-based inside dungeons.", 0],
+      ["Pure stat check", "Fastest to build, shallowest to play. Techniques become passive modifiers.", 0]
+    ]},
+    { n: "V", t: "The rune system", ask: "What is magic, mechanically?", o: [
+      ["Rune Grammar", "Element + Form + Modifiers + Trigger compose into spells with computed cost and effect. Glyphs are discovered; spells are inscribed onto equippable tablets. The demo above.", 1],
+      ["Socket Matrix", "A grid you slot runes into; adjacency, rows and shapes grant bonuses. A spatial puzzle rather than a linguistic one.", 0],
+      ["Mana Circuit", "Route mana across a board; power is a function of path length and purity. Most novel, hardest to teach.", 0],
+      ["Spellbook + reagents", "Traditional authored spells; runes are consumable fuel. Simplest and least distinctive.", 0]
+    ]},
+    { n: "VI", t: "Combat skill breadth", ask: "How many bars, and how deep does each go?", o: [
+      ["Full granularity", "Five to six children per parent — around 30 combat skills. Maximum granularity, maximum risk of dead limbs.", 0],
+      ["Three per parent", "Five parents × three children = 20 combat skills, each with a real technique tree. Weapon variants live inside a child and add no bar.", 1],
+      ["Parents only", "Weapons carry lightweight proficiency counters that unlock techniques but are not levelled skills.", 0],
+      ["Three plus a Style", "As above, plus a specialisation chosen at parent level 50 that reshapes the whole tree.", 0]
+    ]},
+    { n: "VII", t: "Material progression", ask: "How do you stop tier 9 from deleting tiers 1 through 8?", o: [
+      ["Pure ladder", "T1 to T12, each strictly better than the last. Clean, and it obsoletes most of the content you build.", 0],
+      ["Ladder × Alloy × Quality", "Tier controls access; alloys give distinct profiles within a tier; quality from Crude to Legendary keeps old materials competitive. Masterwork Steel out-cuts Crude Mithral.", 1],
+      ["Ladder + affixes", "Randomly rolled properties on top of the ladder.", 0],
+      ["Ladder + full random loot", "Maximum chase, minimum craft identity.", 0]
+    ]},
+    { n: "VIII", t: "The map", ask: "What is a place, structurally?", o: [
+      ["Hex regions containing nodes", "Hexes carry terrain, ownership, danger and prosperity for the war layer; each holds 1–4 activity nodes for the character layer. Serves both acts.", 1],
+      ["Node graph", "Points and roads only. Cheapest and cleanest, but territory and war have nothing to grip.", 0],
+      ["Painted map with hotspots", "Prettiest, least systematic, hardest to extend.", 0],
+      ["Fine tile grid", "Full 4X. Heavy to build and heavy to read.", 0]
+    ]},
+    { n: "IX", t: "Number scale", ask: "Damage in the hundreds, or in the 1e30s? You cannot have both feels.", o: [
+      ["Grounded", "Hundreds to low millions across the whole game; progression expressed through tiers, unlocks and breadth rather than exponents. Keeps the RPG fiction intact.", 1],
+      ["Big-number idle", "Runs to 1e30 and beyond with scientific notation. Strong idle dopamine, dissolves the fiction.", 0],
+      ["Split", "Grounded combat, exponential realm economy.", 0]
+    ]},
+    { n: "X", t: "Civilisation transition", ask: "When does a villager become a ruler?", o: [
+      ["Continuous", "Retinue slot → workshop → hamlet → town → realm. No mode switch; the same systems simply widen.", 1],
+      ["Chapter gate", "Act II opens a distinct realm-management screen with its own verbs.", 0],
+      ["Parallel", "Both layers run from early on, each feeding the other.", 0]
+    ]},
+    { n: "XI", t: "Stack and persistence", ask: "What is it built on, and where does the save live?", o: [
+      ["React + TypeScript + Vite", "Deterministic tick engine in a Web Worker, all content as validated data packs, IndexedDB saves with versioned migrations and export/import. Canvas map, DOM UI, no backend initially.", 1],
+      ["Svelte + TypeScript", "Leaner runtime, smaller ecosystem for the heavy UI work ahead.", 0],
+      ["Vanilla TypeScript", "Maximum control, slowest UI iteration.", 0],
+      ["Any of the above + cloud saves", "Add a backend from day one for cross-device saves.", 0]
+    ]},
+    { n: "XII", t: "Visual direction", ask: "What does the fantasy UI actually look like?", o: [
+      ["Illuminated Charter", "Parchment, iron-gall ink, heraldic tinctures, drop capitals. Warm and bookish.", 0],
+      ["Guild Assay Ledger", "Cold slate and limestone, verdigris accent, ruled columns, struck brass reserved for the mythic strata — the look of this page.", 0],
+      ["Dark Arcane Slate", "Near-black stone, rune-glow, gold leaf. The most conventionally “game-like”.", 0],
+      ["Woodcut", "High-contrast engraved line art with a single spot colour. Bold and cheap to extend.", 0]
+    ]}
+  ];
+
+  var LETTERS = ["A", "B", "C", "D"];
+  var votes = {};
+
+  function renderBallot() {
+    var host = document.getElementById("ballot");
+    host.innerHTML = "";
+
+    ARTICLES.forEach(function (art) {
+      var wrap = document.createElement("div");
+      wrap.className = "article";
+
+      var num = document.createElement("div");
+      num.className = "num";
+      num.textContent = art.n;
+
+      var body = document.createElement("div");
+      var h = document.createElement("h3");
+      h.textContent = art.t;
+      var ask = document.createElement("p");
+      ask.className = "ask";
+      ask.textContent = art.ask;
+      var opts = document.createElement("div");
+      opts.className = "opts";
+      opts.setAttribute("role", "group");
+      opts.setAttribute("aria-label", "Article " + art.n + " — " + art.t);
+
+      art.o.forEach(function (o, i) {
+        var code = art.n + "-" + LETTERS[i];
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "opt";
+        b.dataset.article = art.n;
+        b.dataset.code = code;
+        b.setAttribute("aria-pressed", votes[art.n] === code ? "true" : "false");
+        b.innerHTML =
+          '<span class="code">' + code + '</span>' +
+          '<span><span class="ttl">' + o[0] + (o[2] ? ' <span class="rec">Recommended</span>' : '') + '</span>' +
+          '<span class="dsc">' + o[1] + '</span></span>';
+        b.addEventListener("click", function () {
+          votes[art.n] = (votes[art.n] === code) ? undefined : code;
+          if (!votes[art.n]) delete votes[art.n];
+          renderBallot();
+          renderTally();
+        });
+        opts.appendChild(b);
+      });
+
+      body.appendChild(h);
+      body.appendChild(ask);
+      body.appendChild(opts);
+      wrap.appendChild(num);
+      wrap.appendChild(body);
+      host.appendChild(wrap);
+    });
+  }
+
+  function tallyString() {
+    return ARTICLES
+      .map(function (a) { return votes[a.n]; })
+      .filter(Boolean)
+      .join(" · ");
+  }
+
+  function renderTally() {
+    var out = document.getElementById("tallyOut");
+    var s = tallyString();
+    var n = Object.keys(votes).length;
+    if (!n) {
+      out.textContent = "Nothing selected yet";
+      out.classList.add("empty");
+    } else {
+      out.textContent = s + "   (" + n + "/12)";
+      out.classList.remove("empty");
+    }
+  }
+
+  document.getElementById("fillRec").addEventListener("click", function () {
+    ARTICLES.forEach(function (art) {
+      art.o.forEach(function (o, i) {
+        if (o[2]) votes[art.n] = art.n + "-" + LETTERS[i];
+      });
+    });
+    renderBallot();
+    renderTally();
+  });
+
+  document.getElementById("clearAll").addEventListener("click", function () {
+    votes = {};
+    renderBallot();
+    renderTally();
+  });
+
+  document.getElementById("copyPicks").addEventListener("click", function () {
+    var btn = this;
+    var s = tallyString();
+    if (!s) return;
+    var done = function () {
+      var was = btn.textContent;
+      btn.textContent = "Copied";
+      setTimeout(function () { btn.textContent = was; }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(s).then(done, function () { fallback(s, done); });
+    } else {
+      fallback(s, done);
+    }
+  });
+
+  function fallback(text, done) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); done(); } catch (e) { /* readout stays selectable */ }
+    document.body.removeChild(ta);
+  }
+
+  /* ================= BOOT ================= */
+
+  renderRunes();
+  renderLadder();
+  renderBallot();
+  renderTally();
+  drawMap();
+  if (!reduceMotion) requestAnimationFrame(animate);
+
+  var t;
+  window.addEventListener("resize", function () {
+    clearTimeout(t);
+    t = setTimeout(drawMap, 120);
+  });
+
+  new MutationObserver(drawMap).observe(document.documentElement, {
+    attributes: true, attributeFilter: ["data-theme", "class", "style"]
+  });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawMap);
+})();
+</script>
