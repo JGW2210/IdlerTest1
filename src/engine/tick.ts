@@ -6,6 +6,8 @@ import {
 import { effectiveLevel, grantXp, levelOf } from './skills'
 import { addItem, consumeInputs, countItem, hasInputs, toolSpeedFor } from './inventory'
 import { survey, surveyTime, surveyXp } from './survey'
+import { standingPerAction } from './diplomacy'
+import { POWER_BY_ID, STANDING_TIERS } from '@/content/powers'
 import { TABLET_BY_ITEM, decipher, describeOutcome } from './archaeology'
 import { refreshTechniques, startCombat, tickCombat } from './combat'
 import { settleExpectation, randInt, pickWeighted, stream } from './rng'
@@ -118,6 +120,25 @@ function runAssignment(
 
     grantXpTracked(state, siteDef.skill, node.xp * completions, report)
     grantYields(state, node, completions, mode, rng, report, member !== null)
+
+    // Working a foreign hold's ground is how standing is earned. Trading counts
+    // for most of it; labouring in their works counts for something.
+    if (found.region.kind === 'foreign') {
+      const rs = state.regions[found.region.id]
+      if (rs) {
+        const before = rs.standing
+        rs.standing = Math.min(100, rs.standing + standingPerAction(siteDef.activity) * completions)
+        const power = found.region.power ? POWER_BY_ID[found.region.power] : undefined
+        if (power) {
+          // Announce each threshold crossed, since a new tier means new words.
+          for (const tier of STANDING_TIERS) {
+            if (before < tier.at && rs.standing >= tier.at && tier.at > 0) {
+              state.log.push({ t: state.elapsed, text: `${power.name} count you ${tier.name.toLowerCase()}.` })
+            }
+          }
+        }
+      }
+    }
     return
   }
 

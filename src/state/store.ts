@@ -7,6 +7,7 @@ import { catchUp, type OfflineResult } from '@/engine/offline'
 import { loadGame, saveGame, exportSave, importSave, clearGame } from '@/engine/save'
 import { equip, unequip, nextUid } from '@/engine/inventory'
 import { canInscribe } from '@/engine/runes'
+import { learnFromTutor, claimHold } from '@/engine/diplomacy'
 
 /**
  * The bridge between the pure engine and React.
@@ -42,6 +43,9 @@ interface Store {
 
   setGambits: (rules: GambitRule[]) => void
   addGambitRule: () => void
+
+  learnFromTutor: (regionId: string, glyphId: string) => void
+  claimHold: (regionId: string) => void
 
   succeedNow: (heirName: string) => void
 
@@ -146,6 +150,22 @@ export const useGame = create<Store>((set, get) => {
         }
         s.gambits = [...s.gambits.slice(0, -1), rule, ...s.gambits.slice(-1)]
       })
+    },
+
+    learnFromTutor(regionId, glyphId) {
+      const s = get().state
+      if (!s) return
+      const result = learnFromTutor(s, regionId, glyphId)
+      if (!result.ok) { set({ error: result.reason }); return }
+      set({ revision: get().revision + 1, error: null })
+    },
+
+    claimHold(regionId) {
+      const s = get().state
+      if (!s) return
+      const result = claimHold(s, regionId)
+      if (!result.ok) { set({ error: result.reason }); return }
+      set({ revision: get().revision + 1, error: null })
     },
 
     succeedNow(heirName) {

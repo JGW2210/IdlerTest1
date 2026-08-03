@@ -5,7 +5,7 @@ import { REGIONS, STARTING_REGIONS } from '@/content/regions'
 import { STARTING_GLYPHS } from '@/content/glyphs'
 import { addItem, nextUid } from './inventory'
 
-export const SAVE_VERSION = 2
+export const SAVE_VERSION = 3
 
 function blankSkills(): Record<SkillId, SkillState> {
   const out: Record<SkillId, SkillState> = {}
@@ -45,6 +45,7 @@ export function createState(seed = Math.floor(Math.random() * 0xffffffff), name 
           // Home is fully drawn; the ring around it is sketched and wants
           // finishing, which is the first thing a survey has to do.
           surveyed: r.id === 'ashcombe' ? 1 : STARTING_REGIONS.includes(r.id) ? 0.45 : 0,
+          standing: 0,
         },
       ]),
     ),

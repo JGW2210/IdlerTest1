@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { useGame } from '@/state/store'
 import { REGIONS } from '@/content/regions'
+import { itemById } from '@/content/items'
+import { CLAIM_STANDING } from '@/content/powers'
+import { knownHolds } from '@/engine/diplomacy'
 import { RETIREMENT_AGE, INHERITANCE_RATE, SECONDS_PER_YEAR } from '@/engine/curves'
 
 /**
@@ -18,6 +21,8 @@ export function RealmPanel() {
   const exportToText = useGame((s) => s.exportToText)
   const importFromText = useGame((s) => s.importFromText)
   const hardReset = useGame((s) => s.hardReset)
+  const learnFrom = useGame((s) => s.learnFromTutor)
+  const claim = useGame((s) => s.claimHold)
 
   const [heir, setHeir] = useState('')
   const [payload, setPayload] = useState('')
@@ -29,6 +34,8 @@ export function RealmPanel() {
   const yearsLeft = Math.max(0, RETIREMENT_AGE - state.character.age)
   const held = REGIONS.filter((r) => state.regions[r.id]?.held)
   const known = REGIONS.filter((r) => state.regions[r.id]?.discovered)
+  const holds = knownHolds(state)
+  const foreignTotal = REGIONS.filter((r) => r.kind === 'foreign').length
 
   return (
     <div>
@@ -38,7 +45,7 @@ export function RealmPanel() {
         {' '}{known.length} known.
       </p>
 
-      <div className="grid g2">
+      <div className="grid g2" style={{ alignItems: 'start' }}>
         <div className="card">
           <header><div style={{ fontFamily: 'var(--serif)', fontWeight: 600 }}>Bloodline</div></header>
           <div className="inner">
@@ -84,8 +91,79 @@ export function RealmPanel() {
         </div>
 
         <div className="card">
+          <header>
+            <div style={{ fontFamily: 'var(--serif)', fontWeight: 600 }}>Foreign holds</div>
+            <span className="eyebrow">{holds.length} found of {foreignTotal}</span>
+          </header>
+          <div className="inner" style={{ maxHeight: '30rem', overflowY: 'auto' }}>
+            {holds.length === 0 ? (
+              <p className="empty">
+                None reached. The six powers keep holds out past ring three — each teaches words
+                nobody else will, and trades a metal nobody else has.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                {holds.map((h) => (
+                  <div key={h.region.id} className="hold">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', alignItems: 'baseline', flexWrap: 'wrap' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <b style={{ fontFamily: 'var(--serif)', fontSize: '0.98rem' }}>{h.region.name}</b>
+                        <p className="eyebrow" style={{ marginTop: 1 }}>{h.power.name}{h.held ? ' · yours' : ''}</p>
+                      </div>
+                      <span className="eyebrow" style={{ color: 'var(--gold)' }}>{h.tier.name}</span>
+                    </div>
+
+                    <div className="meter" style={{ margin: '0.4rem 0' }}>
+                      <i style={{ width: `${Math.min(100, h.standing)}%`, background: 'linear-gradient(90deg, var(--glow-2), var(--gold))' }} />
+                    </div>
+                    <p className="eyebrow" style={{ marginBottom: '0.4rem' }}>
+                      standing {Math.floor(h.standing)}/100 · trades {itemById(h.power.material.id)?.name}
+                    </p>
+
+                    {h.offers.length > 0 && (
+                      <div className="chips" style={{ marginBottom: '0.35rem' }}>
+                        {h.offers.map((o) => (
+                          <button
+                            key={o.glyph}
+                            className="chip"
+                            disabled={o.known || state.insight < o.price}
+                            title={o.known ? 'Already known' : `${o.price} insight`}
+                            onClick={() => learnFrom(h.region.id, o.glyph)}
+                          >
+                            {o.name} {o.known ? '✓' : `· ${o.price}`}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    <p className="eyebrow">
+                      {h.offers.length === 0
+                        ? `${h.power.greeting} They teach nothing yet — work their ground.`
+                        : h.withheld > 0
+                          ? `${h.withheld} more ${h.withheld === 1 ? 'word' : 'words'} held back until your standing rises.`
+                          : 'They have taught you everything they will.'}
+                    </p>
+
+                    {!h.held && (
+                      <button
+                        className={`btn tiny ${h.claimable ? 'primary' : ''}`}
+                        style={{ marginTop: '0.45rem' }}
+                        disabled={!h.claimable}
+                        onClick={() => claim(h.region.id)}
+                      >
+                        {h.claimable ? 'Treat for the hold' : `Treat at standing ${CLAIM_STANDING}`}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="card">
           <header><div style={{ fontFamily: 'var(--serif)', fontWeight: 600 }}>Regions</div></header>
-          <div className="inner grid" style={{ gap: '0.35rem' }}>
+          <div className="inner grid" style={{ gap: '0.35rem', maxHeight: '30rem', overflowY: 'auto' }}>
             {REGIONS.map((r) => {
               const rs = state.regions[r.id]
               return (
@@ -94,8 +172,8 @@ export function RealmPanel() {
                     <span>{rs?.discovered ? r.name : 'Unscouted'}</span>
                     <small>
                       {rs?.discovered
-                        ? `${r.terrain} · danger ${r.danger} · ${rs.held ? `held · loyalty ${rs.loyalty}` : 'unclaimed'}`
-                        : `Cartography ${r.scoutLevelReq ?? '?'}`}
+                        ? `${r.kind} · ${r.terrain} · danger ${r.danger} · ${rs.held ? `held · loyalty ${rs.loyalty}` : 'unclaimed'}`
+                        : `reach ${r.scoutLevelReq ?? '?'}`}
                     </small>
                   </div>
                 </div>

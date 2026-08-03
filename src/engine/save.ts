@@ -52,6 +52,14 @@ const MIGRATIONS: Migration[] = [
     }
     return save
   },
+
+  // v2 -> v3: rings 3-5 gained foreign holds, so regions carry standing.
+  (save) => {
+    const regions = (save['regions'] ?? {}) as Record<string, Record<string, unknown>>
+    for (const rs of Object.values(regions)) rs['standing'] ??= 0
+    save['regions'] = regions
+    return save
+  },
 ]
 
 function openDb(): Promise<IDBDatabase> {

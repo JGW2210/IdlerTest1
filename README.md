@@ -7,7 +7,7 @@ runes; you end running a realm.
 ```bash
 npm install
 npm run dev        # play it
-npm test           # 24 engine tests
+npm test           # 53 engine tests
 npm run typecheck
 npm run build
 ```
@@ -27,6 +27,37 @@ finished game — see *What is not built yet* below.
 Ninety-one regions across five rings. Rings 0–3 (37 regions) are hand-authored;
 rings 4–5 (54) are the **Outlands**, generated from a fixed world seed into six
 named marches — so they validate, save and load exactly like authored content.
+
+Rings 3–5 **intersperse** settled ground with wilds rather than drawing a hard
+frontier, and the mix thins outward: ring 3 is 72% settled, ring 4 is even, ring
+5 is 80% wilderness. Distance is the wilderness you cross to reach the next
+place worth reaching.
+
+| Ring | Holding | Foreign | Wild |
+| --- | --- | --- | --- |
+| 0–2 | 19 | — | — |
+| 3 | 13 | — | 5 |
+| 4 | — | 12 | 12 |
+| 5 | — | 6 | 24 |
+
+## The six powers
+
+Out past ring three are other peoples, three holds each. Every power has three
+things nobody else has: a **metal** that cannot be gathered anywhere (Rimesteel,
+Emberglass, Bogsilver, Wardstone, Tidesteel, Moonsilver), a **tongue** their
+holds are named from, and **words** — glyphs only they will teach.
+
+That last one matters: seven glyphs are flagged tutor-exclusive and no
+excavation at any depth will ever produce them. Digging gives you the words the
+ground happened to keep; tutors give you the words a people chose to. The rune
+grammar is therefore partly *geographic* — you cannot compose with the Hollow
+Court's vocabulary until you have reached them and earned their patience.
+
+Reaching a hold pays four ways: their goods on the market's yield table, their
+glyphs for Insight (its only sink), a forward base that extends how far a survey
+can push, and — at full standing — the hold itself.
+
+Standing is earned by working their ground, not by a bar that fills on its own.
 
 Three levels of zoom, because "granular" had to mean two different things:
 
@@ -112,14 +143,14 @@ Two properties are load-bearing and worth preserving:
 
 Honest list, roughly in the order I would do them:
 
-- **The realm layer past its data model.** Regions carry loyalty, prosperity and
-  ownership, and nothing yet reads them. Diplomacy, war and the Act II civil
-  skills are stubs — only Ashcombe is ever *held*, and nothing claims more.
-- **Tutors.** Aldermarch is described as the place that teaches things for money;
-  buying glyphs with Insight is not built, so decipherment is currently the only
-  route into the grammar.
-- **Recipes from tablets.** Decipherment gives glyphs, lore and map fragments,
-  but not the recipes the lore keeps alluding to.
+- **War.** Diplomacy exists as standing, trade and claim; there is no way to take
+  a hold that will not treat, and no garrison, levy or front.
+- **The realm layer past claiming.** Regions carry loyalty and prosperity, and
+  once claimed nothing yet consumes or produces them.
+- **Recipes from tablets and tutors.** Both give glyphs, lore and map fragments,
+  but not the recipes the lore keeps alluding to — the six trade metals have no
+  smithing lines yet, so they are currency rather than materials.
+- **Insight has one sink.** Tutors spend it; nothing else does.
 - **The worker boundary.** The engine is worker-ready but currently runs on the
   main thread via a fixed-timestep rAF loop.
 - Mastery trees, affixes on Legendary rolls, commissions, retinue training,

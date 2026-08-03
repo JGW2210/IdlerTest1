@@ -1,6 +1,7 @@
 import type { EquipSlot, ItemDef, SkillId } from '@/engine/types'
 import { materialPower } from '@/engine/curves'
 import { MATERIAL_TIERS, RAW_MATERIALS, materialItems, type MaterialTier } from './materials'
+import { powerMaterials } from './powers'
 
 /**
  * Equipment is generated from the material ladder crossed with a small table of
@@ -162,7 +163,7 @@ export const SPECIAL_ITEMS: ItemDef[] = [
 let cache: ItemDef[] | null = null
 
 export function allItems(): ItemDef[] {
-  if (!cache) cache = [...materialItems(), ...RAW_MATERIALS, ...forgedItems(), ...SPECIAL_ITEMS]
+  if (!cache) cache = [...materialItems(), ...RAW_MATERIALS, ...powerMaterials(), ...forgedItems(), ...SPECIAL_ITEMS]
   return cache
 }
 

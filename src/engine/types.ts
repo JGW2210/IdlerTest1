@@ -176,21 +176,33 @@ export type Terrain =
   | 'village' | 'forest' | 'mountain' | 'plains' | 'cavern' | 'town' | 'ruin'
   | 'marsh' | 'coast' | 'moor' | 'waste' | 'unknown'
 
+/**
+ * What kind of place this is. Rings three to five intersperse all three, so the
+ * far map is settled ground fraying into wilds rather than a hard frontier.
+ *
+ *   holding — your realm's ground; yours or claimable outright
+ *   wild    — Outland wilderness; workable, but nobody lives there
+ *   foreign — another power's hold; has standing, tutors and goods of its own
+ */
+export type RegionKind = 'holding' | 'wild' | 'foreign'
+
 export interface RegionDef {
   id: RegionId
   name: string
   coord: AxialCoord
   terrain: Terrain
+  kind: RegionKind
   /** 0 = safe. Feeds combat difficulty and, in Act II, garrison requirements. */
   danger: number
   sites: SiteDef[]
   /** Cartography level a survey needs before this region can be found. */
   scoutLevelReq?: number
-  /** Ring 4+ regions are generated rather than authored; flagged so the UI can
-   *  say so and so the chart can draw them in a less certain hand. */
+  /** Generated rather than authored. The chart draws these in a less certain hand. */
   outland?: boolean
-  /** Named province, for the outer rings. */
+  /** Named march, for the outer rings. */
   province?: string
+  /** Which foreign power holds this, for `kind: 'foreign'`. */
+  power?: string
   blurb?: string
 }
 
@@ -203,6 +215,9 @@ export interface RegionState {
   /** How thoroughly this region has been surveyed, 0..1. Drives how much detail
    *  the chart renders for it — a half-surveyed hex is drawn in a vaguer hand. */
   surveyed: number
+  /** Foreign holds only: 0-100. Raised by trading with them; gates what they
+   *  will teach, and at 100 they will treat for the hold itself. */
+  standing: number
 }
 
 /** A deciphered inscription. The lore log is Archaeology's other reward. */

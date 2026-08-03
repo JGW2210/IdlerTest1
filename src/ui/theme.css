@@ -466,3 +466,13 @@ p.page-sub { margin: 0 0 1.1rem; color: var(--muted); max-width: 62ch; }
   font-style: italic;
   line-height: 1.55;
 }
+
+/* foreign holds */
+
+.hold {
+  border: 1px solid var(--edge);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--r);
+  background: var(--panel-2);
+  padding: 0.6rem 0.7rem;
+}

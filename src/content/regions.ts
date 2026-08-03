@@ -15,7 +15,7 @@ import { generateOutlands } from './outlands'
 const AUTHORED: RegionDef[] = [
   // ============================================================ ring 0
   {
-    id: 'ashcombe', name: 'Ashcombe', coord: { q: 0, r: 0 }, terrain: 'village', danger: 0,
+    id: 'ashcombe', name: 'Ashcombe', coord: { q: 0, r: 0 }, terrain: 'village', kind: 'holding', danger: 0,
     blurb: 'Forty households, a mill, a church with a leaking roof, and a smithy whose owner is getting old.',
     sites: [
       forage('ash_commons', 'The Commons', [0.28, 0.62], [
@@ -39,7 +39,7 @@ const AUTHORED: RegionDef[] = [
 
   // ============================================================ ring 1
   {
-    id: 'stonewatch', name: 'Stonewatch Ruin', coord: { q: 0, r: -1 }, terrain: 'ruin', danger: 3,
+    id: 'stonewatch', name: 'Stonewatch Ruin', coord: { q: 0, r: -1 }, terrain: 'ruin', kind: 'holding', danger: 3,
     blurb: 'Older than Camelot and built by people who did not use doors the way we do.',
     sites: [
       dig('stone_terrace', 'Collapsed Terrace', [0.34, 0.30], strata([
@@ -67,7 +67,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'greyhollow', name: 'Greyhollow Mine', coord: { q: 1, r: -1 }, terrain: 'mountain', danger: 1,
+    id: 'greyhollow', name: 'Greyhollow Mine', coord: { q: 1, r: -1 }, terrain: 'mountain', kind: 'holding', danger: 1,
     blurb: 'Worked for six generations. The upper galleries are picked clean; the lower ones are not, for a reason.',
     sites: [
       mine('grey_upper', 'Greyhollow Galleries', [0.30, 0.36], [
@@ -88,7 +88,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'barrowdeep', name: 'Barrowdeep', coord: { q: 1, r: 0 }, terrain: 'cavern', danger: 4,
+    id: 'barrowdeep', name: 'Barrowdeep', coord: { q: 1, r: 0 }, terrain: 'cavern', kind: 'holding', danger: 4,
     blurb: 'A cave mouth that was a door once. The torches gutter about thirty paces in and nobody has agreed why.',
     sites: [
       delve('barrow_mouth', 'The Mouth', [0.34, 0.40], [
@@ -107,7 +107,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'fallow', name: 'The Fallow', coord: { q: 0, r: 1 }, terrain: 'plains', danger: 2,
+    id: 'fallow', name: 'The Fallow', coord: { q: 0, r: 1 }, terrain: 'plains', kind: 'holding', danger: 2,
     blurb: 'Good soil left untilled since the last levy took the men who worked it.',
     sites: [
       forage('fallow_hedges', 'Hedgerows', [0.30, 0.34], [
@@ -124,7 +124,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'aldermarch', name: 'Aldermarch', coord: { q: -1, r: 1 }, terrain: 'town', danger: 1,
+    id: 'aldermarch', name: 'Aldermarch', coord: { q: -1, r: 1 }, terrain: 'town', kind: 'holding', danger: 1,
     blurb: 'Two thousand souls, a wool market, and the nearest person who will teach you anything for money.',
     sites: [
       market('alder_market', 'Wool Market', [0.32, 0.40], [
@@ -148,7 +148,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'tanglewood', name: 'Tanglewood', coord: { q: -1, r: 0 }, terrain: 'forest', danger: 2,
+    id: 'tanglewood', name: 'Tanglewood', coord: { q: -1, r: 0 }, terrain: 'forest', kind: 'holding', danger: 2,
     blurb: 'Old growth, poorly charted. The wolves are not the problem; what the wolves avoid is the problem.',
     sites: [
       wood('tangle_eaves', 'The Eaves', [0.26, 0.30], [
@@ -169,7 +169,7 @@ const AUTHORED: RegionDef[] = [
 
   // ============================================================ ring 2
   {
-    id: 'thornfell', name: 'Thornfell', coord: { q: 0, r: -2 }, terrain: 'mountain', danger: 6, scoutLevelReq: 4,
+    id: 'thornfell', name: 'Thornfell', coord: { q: 0, r: -2 }, terrain: 'mountain', kind: 'holding', danger: 6, scoutLevelReq: 4,
     blurb: 'High, cold, and holding the only adamant seam this side of the range.',
     sites: [
       mine('thorn_seam', 'The Adamant Seam', [0.36, 0.34], [
@@ -184,7 +184,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'coldiron', name: 'Coldiron Scarp', coord: { q: 1, r: -2 }, terrain: 'mountain', danger: 5, scoutLevelReq: 5,
+    id: 'coldiron', name: 'Coldiron Scarp', coord: { q: 1, r: -2 }, terrain: 'mountain', kind: 'holding', danger: 5, scoutLevelReq: 5,
     blurb: 'A cliff of ore so pure the compass needles lie for a mile around it.',
     sites: [
       mine('coldiron_face', 'The Scarp Face', [0.32, 0.42], [
@@ -197,7 +197,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'sarnbeacon', name: 'Sarn Beacon', coord: { q: 2, r: -2 }, terrain: 'moor', danger: 4, scoutLevelReq: 8,
+    id: 'sarnbeacon', name: 'Sarn Beacon', coord: { q: 2, r: -2 }, terrain: 'moor', kind: 'holding', danger: 4, scoutLevelReq: 8,
     blurb: 'A signal cairn kept lit for a kingdom that no longer answers.',
     sites: [
       dig('sarn_cairn', 'The Beacon Cairn', [0.50, 0.32], strata([
@@ -215,7 +215,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'hollowmere', name: 'Hollowmere', coord: { q: 2, r: -1 }, terrain: 'marsh', danger: 5, scoutLevelReq: 10,
+    id: 'hollowmere', name: 'Hollowmere', coord: { q: 2, r: -1 }, terrain: 'marsh', kind: 'holding', danger: 5, scoutLevelReq: 10,
     blurb: 'A lake with no inflow and no outflow that has never once frozen.',
     sites: [
       water('mere_reeds', 'The Reed Shallows', [0.30, 0.36], [
@@ -237,7 +237,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'gapingvault', name: 'The Gaping Vault', coord: { q: 2, r: 0 }, terrain: 'cavern', danger: 7, scoutLevelReq: 12,
+    id: 'gapingvault', name: 'The Gaping Vault', coord: { q: 2, r: 0 }, terrain: 'cavern', kind: 'holding', danger: 7, scoutLevelReq: 12,
     blurb: 'Not a cave. A room, with a roof, that happens to be nine hundred feet across.',
     sites: [
       delve('vault_floor', 'The Vault Floor', [0.36, 0.38], [
@@ -252,7 +252,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'mereford', name: 'Mereford', coord: { q: 1, r: 1 }, terrain: 'town', danger: 1, scoutLevelReq: 3,
+    id: 'mereford', name: 'Mereford', coord: { q: 1, r: 1 }, terrain: 'town', kind: 'holding', danger: 1, scoutLevelReq: 3,
     blurb: 'A bridge town that charges for the bridge and apologises for nothing.',
     sites: [
       market('mereford_wharf', 'The Wharfside', [0.34, 0.44], [
@@ -270,7 +270,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'wealdrush', name: 'Wealdrush', coord: { q: 0, r: 2 }, terrain: 'plains', danger: 3, scoutLevelReq: 3,
+    id: 'wealdrush', name: 'Wealdrush', coord: { q: 0, r: 2 }, terrain: 'plains', kind: 'holding', danger: 3, scoutLevelReq: 3,
     blurb: 'Grain country. Whoever holds it feeds whoever holds the valley.',
     sites: [
       forage('weald_fields', 'The Long Fields', [0.30, 0.36], [
@@ -285,7 +285,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'drownedcity', name: 'The Drowned City', coord: { q: -1, r: 2 }, terrain: 'ruin', danger: 8, scoutLevelReq: 18,
+    id: 'drownedcity', name: 'The Drowned City', coord: { q: -1, r: 2 }, terrain: 'ruin', kind: 'holding', danger: 8, scoutLevelReq: 18,
     blurb: 'It goes under at every tide and comes back with the streets rearranged.',
     sites: [
       dig('drowned_causeway', 'The Causeway', [0.32, 0.34], strata([
@@ -305,7 +305,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'saltmarch', name: 'Saltmarch', coord: { q: -2, r: 2 }, terrain: 'coast', danger: 4, scoutLevelReq: 14,
+    id: 'saltmarch', name: 'Saltmarch', coord: { q: -2, r: 2 }, terrain: 'coast', kind: 'holding', danger: 4, scoutLevelReq: 14,
     blurb: 'Where the river gives up and the sea takes over the argument.',
     sites: [
       water('salt_flats', 'The Salt Flats', [0.32, 0.60], [
@@ -318,7 +318,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'elderwood', name: 'Elderwood', coord: { q: -2, r: 1 }, terrain: 'forest', danger: 5, scoutLevelReq: 9,
+    id: 'elderwood', name: 'Elderwood', coord: { q: -2, r: 1 }, terrain: 'forest', kind: 'holding', danger: 5, scoutLevelReq: 9,
     blurb: 'Nobody coppices here. The trees were left alone and have had opinions about it.',
     sites: [
       wood('elder_stand', 'The Standing Wood', [0.34, 0.34], [
@@ -334,7 +334,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'wraithmoor', name: 'Wraithmoor', coord: { q: -2, r: 0 }, terrain: 'moor', danger: 6, scoutLevelReq: 11,
+    id: 'wraithmoor', name: 'Wraithmoor', coord: { q: -2, r: 0 }, terrain: 'moor', kind: 'holding', danger: 6, scoutLevelReq: 11,
     blurb: 'Flat, open, and you will still lose sight of your companion for a quarter hour at a time.',
     sites: [
       dig('wraith_stones', 'The Standing Stones', [0.50, 0.34], strata([
@@ -352,7 +352,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'cairnhead', name: 'Cairnhead', coord: { q: -1, r: -1 }, terrain: 'ruin', danger: 4, scoutLevelReq: 6,
+    id: 'cairnhead', name: 'Cairnhead', coord: { q: -1, r: -1 }, terrain: 'ruin', kind: 'holding', danger: 4, scoutLevelReq: 6,
     blurb: 'Ninety-one cairns on one hillside, and the ninety-second is being built by nobody anyone has seen.',
     sites: [
       dig('cairn_field', 'The Cairn Field', [0.36, 0.36], strata([
@@ -369,7 +369,7 @@ const AUTHORED: RegionDef[] = [
 
   // ============================================================ ring 3
   {
-    id: 'skyreach', name: 'Skyreach', coord: { q: 0, r: -3 }, terrain: 'mountain', danger: 9, scoutLevelReq: 26,
+    id: 'skyreach', name: 'Skyreach', coord: { q: 0, r: -3 }, terrain: 'mountain', kind: 'wild', danger: 9, scoutLevelReq: 26,
     blurb: 'The highest thing anyone has climbed and returned from. There is something built on top.',
     sites: [
       mine('sky_face', 'The North Face', [0.34, 0.30], [
@@ -388,7 +388,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'emberfall', name: 'Emberfall Caldera', coord: { q: 1, r: -3 }, terrain: 'waste', danger: 10, scoutLevelReq: 30,
+    id: 'emberfall', name: 'Emberfall Caldera', coord: { q: 1, r: -3 }, terrain: 'waste', kind: 'wild', danger: 10, scoutLevelReq: 30,
     blurb: 'Still warm after four hundred years, which is four hundred years longer than it should be.',
     sites: [
       mine('ember_vent', 'The Vent Fields', [0.36, 0.40], [
@@ -401,7 +401,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'ashensteps', name: 'The Ashen Steps', coord: { q: 2, r: -3 }, terrain: 'waste', danger: 9, scoutLevelReq: 28,
+    id: 'ashensteps', name: 'The Ashen Steps', coord: { q: 2, r: -3 }, terrain: 'waste', kind: 'wild', danger: 9, scoutLevelReq: 28,
     blurb: 'A stair a mile wide, cut into the ash, going down to nothing anyone has found.',
     sites: [
       dig('ashen_stair', 'The Great Stair', [0.50, 0.36], strata([
@@ -416,7 +416,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'frostgate', name: 'Frostgate', coord: { q: 3, r: -3 }, terrain: 'mountain', danger: 8, scoutLevelReq: 24,
+    id: 'frostgate', name: 'Frostgate', coord: { q: 3, r: -3 }, terrain: 'mountain', kind: 'holding', danger: 8, scoutLevelReq: 24,
     blurb: 'A pass held by a garrison that has not been relieved in three reigns and does not intend to leave.',
     sites: [
       mine('frost_cut', 'The Pass Cut', [0.34, 0.42], [
@@ -433,7 +433,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'rimewatch', name: 'Rimewatch', coord: { q: 3, r: -2 }, terrain: 'mountain', danger: 7, scoutLevelReq: 22,
+    id: 'rimewatch', name: 'Rimewatch', coord: { q: 3, r: -2 }, terrain: 'mountain', kind: 'holding', danger: 7, scoutLevelReq: 22,
     blurb: 'A watchtower facing north, which tells you what they expected to come from there.',
     sites: [
       dig('rime_tower', 'The Watchtower', [0.50, 0.34], strata([
@@ -448,7 +448,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'sunkendelve', name: 'The Sunken Delve', coord: { q: 3, r: -1 }, terrain: 'cavern', danger: 9, scoutLevelReq: 32,
+    id: 'sunkendelve', name: 'The Sunken Delve', coord: { q: 3, r: -1 }, terrain: 'cavern', kind: 'holding', danger: 9, scoutLevelReq: 32,
     blurb: 'A dwarf-cut mine, abandoned mid-shift. The tools are still where they were set down.',
     sites: [
       delve('sunken_shafts', 'The Shafts', [0.36, 0.38], [
@@ -463,7 +463,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'blackfen', name: 'Blackfen', coord: { q: 3, r: 0 }, terrain: 'marsh', danger: 7, scoutLevelReq: 20,
+    id: 'blackfen', name: 'Blackfen', coord: { q: 3, r: 0 }, terrain: 'marsh', kind: 'wild', danger: 7, scoutLevelReq: 20,
     blurb: 'Eleven villages went into this fen over three centuries. None came out, and all of them are still marked on the old charts.',
     sites: [
       forage('fen_beds', 'The Black Beds', [0.32, 0.38], [
@@ -485,7 +485,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'harrowgate', name: 'Harrowgate', coord: { q: 2, r: 1 }, terrain: 'town', danger: 3, scoutLevelReq: 16,
+    id: 'harrowgate', name: 'Harrowgate', coord: { q: 2, r: 1 }, terrain: 'town', kind: 'holding', danger: 3, scoutLevelReq: 16,
     blurb: 'The last real town before the marches. Everything expensive here is expensive for a reason.',
     sites: [
       market('harrow_exchange', 'The Exchange', [0.34, 0.40], [
@@ -501,7 +501,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'greenmantle', name: 'Greenmantle', coord: { q: 1, r: 2 }, terrain: 'forest', danger: 5, scoutLevelReq: 13,
+    id: 'greenmantle', name: 'Greenmantle', coord: { q: 1, r: 2 }, terrain: 'forest', kind: 'holding', danger: 5, scoutLevelReq: 13,
     blurb: 'A managed wood, beautifully kept, by no one who will admit to keeping it.',
     sites: [
       wood('green_rides', 'The Rides', [0.32, 0.36], [
@@ -514,7 +514,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'ninebarrows', name: 'Ninebarrows', coord: { q: 0, r: 3 }, terrain: 'ruin', danger: 6, scoutLevelReq: 15,
+    id: 'ninebarrows', name: 'Ninebarrows', coord: { q: 0, r: 3 }, terrain: 'ruin', kind: 'holding', danger: 6, scoutLevelReq: 15,
     blurb: 'Nine barrows in a line, aligned on nothing in the sky that anyone can identify.',
     sites: [
       dig('nine_line', 'The Barrow Line', [0.50, 0.38], strata([
@@ -533,7 +533,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'tidewrack', name: 'Tidewrack', coord: { q: -1, r: 3 }, terrain: 'coast', danger: 5, scoutLevelReq: 17,
+    id: 'tidewrack', name: 'Tidewrack', coord: { q: -1, r: 3 }, terrain: 'coast', kind: 'holding', danger: 5, scoutLevelReq: 17,
     blurb: 'A shingle beach that collects things. Not always from this sea.',
     sites: [
       forage('tide_strand', 'The Strand', [0.32, 0.62], [
@@ -551,7 +551,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'gullsreach', name: "Gull's Reach", coord: { q: -2, r: 3 }, terrain: 'coast', danger: 4, scoutLevelReq: 19,
+    id: 'gullsreach', name: "Gull's Reach", coord: { q: -2, r: 3 }, terrain: 'coast', kind: 'holding', danger: 4, scoutLevelReq: 19,
     blurb: 'A fishing hamlet of nine boats that will take your coin and not your questions.',
     sites: [
       water('gull_grounds', 'The Fishing Grounds', [0.34, 0.44], [
@@ -564,7 +564,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'weepingshore', name: 'The Weeping Shore', coord: { q: -3, r: 3 }, terrain: 'coast', danger: 8, scoutLevelReq: 34,
+    id: 'weepingshore', name: 'The Weeping Shore', coord: { q: -3, r: 3 }, terrain: 'coast', kind: 'wild', danger: 8, scoutLevelReq: 34,
     blurb: 'The cliffs here run with fresh water year round and nobody has found the spring.',
     sites: [
       dig('weep_cliffs', 'The Cliff Cuts', [0.50, 0.36], strata([
@@ -580,7 +580,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'whitethorn', name: 'Whitethorn', coord: { q: -3, r: 2 }, terrain: 'forest', danger: 6, scoutLevelReq: 21,
+    id: 'whitethorn', name: 'Whitethorn', coord: { q: -3, r: 2 }, terrain: 'forest', kind: 'holding', danger: 6, scoutLevelReq: 21,
     blurb: 'Hawthorn in flower all year. Cutting one is a hanging offence and always has been.',
     sites: [
       wood('white_thicket', 'The Thicket', [0.32, 0.36], [
@@ -593,7 +593,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'moondial', name: 'Moondial Ring', coord: { q: -3, r: 1 }, terrain: 'ruin', danger: 7, scoutLevelReq: 27,
+    id: 'moondial', name: 'Moondial Ring', coord: { q: -3, r: 1 }, terrain: 'ruin', kind: 'holding', danger: 7, scoutLevelReq: 27,
     blurb: 'Sixty stones. It keeps time, and not the time anyone here uses.',
     sites: [
       dig('moon_ring', 'The Ring', [0.50, 0.34], strata([
@@ -608,7 +608,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'hollowhome', name: 'Hollowhome', coord: { q: -3, r: 0 }, terrain: 'cavern', danger: 8, scoutLevelReq: 25,
+    id: 'hollowhome', name: 'Hollowhome', coord: { q: -3, r: 0 }, terrain: 'cavern', kind: 'holding', danger: 8, scoutLevelReq: 25,
     blurb: 'A cave system people lived in for eight hundred years and then left over the course of a single winter.',
     sites: [
       delve('hollow_halls', 'The Living Halls', [0.34, 0.38], [
@@ -623,7 +623,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'sunderfell', name: 'Sunderfell', coord: { q: -2, r: -1 }, terrain: 'mountain', danger: 6, scoutLevelReq: 12,
+    id: 'sunderfell', name: 'Sunderfell', coord: { q: -2, r: -1 }, terrain: 'mountain', kind: 'holding', danger: 6, scoutLevelReq: 12,
     blurb: 'A mountain split top to bottom by a single clean cut. Geology does not do this.',
     sites: [
       mine('sunder_cleft', 'The Cleft', [0.34, 0.36], [
@@ -636,7 +636,7 @@ const AUTHORED: RegionDef[] = [
     ],
   },
   {
-    id: 'longbarrow', name: 'The Long Barrow', coord: { q: -1, r: -2 }, terrain: 'ruin', danger: 5, scoutLevelReq: 7,
+    id: 'longbarrow', name: 'The Long Barrow', coord: { q: -1, r: -2 }, terrain: 'ruin', kind: 'holding', danger: 5, scoutLevelReq: 7,
     blurb: 'Four hundred feet of barrow for one body, and the body is not the interesting part.',
     sites: [
       dig('long_mound', 'The Mound', [0.50, 0.36], strata([

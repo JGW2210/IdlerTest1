@@ -28,6 +28,8 @@ export const INK = {
   green: '#4C6642',
   water: '#48626F',
   gold: '#A97F2E',
+  /** A second ink, for another people's ground. Charts really were drawn in two. */
+  foreign: '#3F4B6B',
 } as const
 
 /** What Cartography unlocks on the sheet, and at what level. */
@@ -537,16 +539,26 @@ export function drawChart(ctx: CanvasRenderingContext2D, o: ChartOpts): HexCente
     const sure = rs.surveyed
     const sel = region.id === o.selected
 
+    const foreign = region.kind === 'foreign'
+    const lineColour = sel ? INK.ochre : foreign ? INK.foreign : INK.ink
+
     // The outline: hesitant and broken when barely surveyed, confident when done.
     const pts = hexPoints(cx, cy, size * 0.92)
     ctx.save()
     if (sure < 0.6) ctx.setLineDash([5, 4])
     inkPath(ctx, [...pts, pts[0]!], `hex${region.id}`, {
       amp: 2.4 - sure * 1.6,
-      width: sel ? 2.1 : 1.1,
+      width: sel ? 2.1 : foreign ? 1.6 : 1.1,
       alpha: 0.28 + sure * 0.42,
-      colour: sel ? INK.ochre : INK.ink,
+      colour: lineColour,
     })
+    // Another people's ground is ruled twice, in the second ink.
+    if (foreign && sure >= 0.5) {
+      const inner = hexPoints(cx, cy, size * 0.82)
+      inkPath(ctx, [...inner, inner[0]!], `hexin${region.id}`, {
+        amp: 1.2, width: 0.8, alpha: 0.3, colour: INK.foreign,
+      })
+    }
     ctx.restore()
 
     if (o.states[region.id]?.held) {
@@ -589,9 +601,25 @@ export function drawChart(ctx: CanvasRenderingContext2D, o: ChartOpts): HexCente
       nameSize -= 1
       ctx.font = `${style} ${nameSize}px Palatino, "Palatino Linotype", Georgia, serif`
     }
-    ctx.fillStyle = sel ? INK.ochre : INK.ink
+    ctx.fillStyle = sel ? INK.ochre : foreign ? INK.foreign : INK.ink
     ctx.globalAlpha = 0.4 + sure * 0.5
     ctx.fillText(label, cx, cy + size * 0.62)
+
+    // A banner marks a hold that is not yours, so the eye finds the settled
+    // ground among the wilds without reading a single name.
+    if (foreign && sure >= 0.5) {
+      const bx = cx
+      const by = cy - size * 0.52
+      inkPath(ctx, [[bx, by + size * 0.16], [bx, by - size * 0.16]], `fl${region.id}`, {
+        amp: 0.4, width: 1.2, colour: INK.foreign, alpha: 0.6,
+      })
+      inkPath(
+        ctx,
+        [[bx, by - size * 0.16], [bx + size * 0.19, by - size * 0.09], [bx, by - size * 0.02]],
+        `fg${region.id}`,
+        { amp: 0.4, width: 1, colour: INK.foreign, alpha: 0.55, close: true },
+      )
+    }
 
     if (sure >= 0.6 && region.danger >= 6) {
       ctx.fillStyle = INK.ochre

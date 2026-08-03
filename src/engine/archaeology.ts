@@ -2,6 +2,7 @@ import type { GameState, ItemId, RegionId } from './types'
 import type { Rng } from './rng'
 import { pickWeighted } from './rng'
 import { GLYPH_BY_ID, GLYPHS } from '@/content/glyphs'
+import { TUTOR_ONLY_GLYPHS } from '@/content/powers'
 import { LORE, LORE_BY_ID, type LoreDef } from '@/content/lore'
 import { REGIONS, hexDistance } from '@/content/regions'
 import { levelOf } from './skills'
@@ -84,7 +85,14 @@ export function availableTablets(state: GameState): { def: TabletDef; held: numb
  */
 export function candidateGlyphs(state: GameState, def: TabletDef): string[] {
   const known = new Set(state.knownGlyphs)
-  return GLYPHS.filter((g) => !known.has(g.id) && g.levelReq <= def.glyphCeiling).map((g) => g.id)
+  return GLYPHS.filter(
+    (g) =>
+      !known.has(g.id) &&
+      g.levelReq <= def.glyphCeiling &&
+      // Some words were kept by a people rather than left in the ground. Those
+      // must be taught, and no depth of digging will produce them.
+      !TUTOR_ONLY_GLYPHS.has(g.id),
+  ).map((g) => g.id)
 }
 
 export function candidateLore(state: GameState, def: TabletDef): LoreDef[] {

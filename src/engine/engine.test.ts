@@ -10,6 +10,8 @@ import { validateContent } from '@/content'
 import { REGIONS, AUTHORED_REGIONS, ringOf } from '@/content/regions'
 import { generateOutlands } from '@/content/outlands'
 import { GLYPHS } from '@/content/glyphs'
+import { POWERS, TUTOR_ONLY_GLYPHS, glyphPrice, glyphsOffered, CLAIM_STANDING } from '@/content/powers'
+import { knownHolds, learnFromTutor, claimHold, surveyReachBonus } from './diplomacy'
 import { LORE } from '@/content/lore'
 import { survey, surveyTime } from './survey'
 import { decipher, candidateGlyphs, TABLET_BY_ITEM } from './archaeology'
@@ -423,10 +425,22 @@ describe('archaeology and decipherment', () => {
   it('gates the deepest glyphs behind the oldest tablets', () => {
     const s = fresh()
     const sealed = TABLET_BY_ITEM['sealedTablet']!
-    // Empower needs level 55; a Second Age tablet tops out at 22.
-    expect(candidateGlyphs(s, sealed)).not.toContain('empower')
+    // Sigil needs level 48; a Second Age tablet tops out at 22.
+    expect(candidateGlyphs(s, sealed)).not.toContain('sigil')
     const first = TABLET_BY_ITEM['firstAgeTablet']!
-    expect(candidateGlyphs(s, first)).toContain('empower')
+    expect(candidateGlyphs(s, first)).toContain('sigil')
+  })
+
+  it('never digs up a word a people kept', () => {
+    const s = fresh()
+    // Tutor-exclusive glyphs must be unobtainable at every tablet age, or the
+    // powers stop being the only route to them and the geography stops mattering.
+    for (const def of Object.values(TABLET_BY_ITEM)) {
+      for (const g of TUTOR_ONLY_GLYPHS) {
+        expect(candidateGlyphs(s, def)).not.toContain(g)
+      }
+    }
+    expect(TUTOR_ONLY_GLYPHS.size).toBeGreaterThan(0)
   })
 
   it('inks in a region when a fragment turns up', () => {
@@ -494,5 +508,145 @@ describe('save migration', () => {
     expect(migrated.focus.kind).toBe('idle')
     expect(migrated.focus.node).toBeUndefined()
     expect(migrated.retinue[0]!.assignment.kind).toBe('idle')
+  })
+})
+
+// ===========================================================================
+// The foreign powers
+// ===========================================================================
+
+describe('the powers', () => {
+  it('intersperses settled ground and wilds through rings 3-5', () => {
+    for (const ring of [3, 4, 5]) {
+      const inRing = REGIONS.filter((r) => ringOf(r) === ring)
+      const settled = inRing.filter((r) => r.kind !== 'wild')
+      const wild = inRing.filter((r) => r.kind === 'wild')
+      expect(settled.length, `ring ${ring} settled`).toBeGreaterThan(0)
+      expect(wild.length, `ring ${ring} wild`).toBeGreaterThan(0)
+    }
+  })
+
+  it('thins outward: settled ground gives way to wilds', () => {
+    const share = (ring: number) => {
+      const inRing = REGIONS.filter((r) => ringOf(r) === ring)
+      return inRing.filter((r) => r.kind !== 'wild').length / inRing.length
+    }
+    // Ring 3 mostly settled, ring 4 around half, ring 5 mostly wild.
+    expect(share(3)).toBeGreaterThan(0.6)
+    expect(share(4)).toBeGreaterThan(0.3)
+    expect(share(4)).toBeLessThan(0.7)
+    expect(share(5)).toBeLessThan(0.35)
+    expect(share(3)).toBeGreaterThan(share(4))
+    expect(share(4)).toBeGreaterThan(share(5))
+  })
+
+  it('gives every power at least one reachable hold', () => {
+    for (const p of POWERS) {
+      const holds = REGIONS.filter((r) => r.kind === 'foreign' && r.power === p.id)
+      expect(holds.length, `${p.id} holds`).toBeGreaterThan(0)
+      // A hold must carry its power's trade-only metal somewhere.
+      const sells = holds.some((h) =>
+        h.sites.some((s) => s.layers.some((l) => l.yields.some((y) => y.item === p.material.id))))
+      expect(sells, `${p.id} trades ${p.material.id}`).toBe(true)
+    }
+  })
+
+  it('makes a hold safer than the wilds around it', () => {
+    const foreign = REGIONS.filter((r) => r.kind === 'foreign')
+    const wild = REGIONS.filter((r) => r.kind === 'wild')
+    const avg = (rs: typeof foreign) => rs.reduce((n, r) => n + r.danger, 0) / rs.length
+    expect(avg(foreign)).toBeLessThan(avg(wild))
+  })
+
+  it('earns standing by working a hold, and announces each tier', () => {
+    const s = fresh()
+    const hold = REGIONS.find((r) => r.kind === 'foreign')!
+    s.regions[hold.id]!.discovered = true
+    // Reach the level its market needs.
+    s.skills['commerce'] = { xp: xpAtLevel(80), level: 80 }
+    const marketLayer = hold.sites.find((x) => x.activity === 'trade')!.layers[0]!
+    assignFocus(s, { kind: 'node', node: marketLayer.id, region: hold.id, progress: 0 })
+    stepAll(s, 1800, 'live')
+    expect(s.regions[hold.id]!.standing).toBeGreaterThan(0)
+  })
+
+  it('will not teach beyond the standing you have earned', () => {
+    const s = fresh()
+    const hold = REGIONS.find((r) => r.kind === 'foreign')!
+    const power = POWERS.find((p) => p.id === hold.power)!
+    s.regions[hold.id]!.discovered = true
+    s.insight = 100000
+
+    // At zero standing they teach nothing at all.
+    expect(glyphsOffered(power, 0)).toHaveLength(0)
+    const refused = learnFromTutor(s, hold.id, power.glyphs[0]!)
+    expect(refused.ok).toBe(false)
+
+    // Known standing opens exactly the first word.
+    s.regions[hold.id]!.standing = 25
+    expect(glyphsOffered(power, 25)).toEqual([power.glyphs[0]])
+    const bought = learnFromTutor(s, hold.id, power.glyphs[0]!)
+    expect(bought.ok).toBe(true)
+    expect(s.knownGlyphs).toContain(power.glyphs[0])
+
+    // The second is still withheld.
+    const tooSoon = learnFromTutor(s, hold.id, power.glyphs[1]!)
+    expect(tooSoon.ok).toBe(false)
+  })
+
+  it('charges insight, and refuses when you cannot pay', () => {
+    const s = fresh()
+    const hold = REGIONS.find((r) => r.kind === 'foreign')!
+    const power = POWERS.find((p) => p.id === hold.power)!
+    s.regions[hold.id]!.discovered = true
+    s.regions[hold.id]!.standing = 50
+    s.insight = 0
+
+    const broke = learnFromTutor(s, hold.id, power.glyphs[0]!)
+    expect(broke.ok).toBe(false)
+
+    s.insight = glyphPrice(0)
+    const paid = learnFromTutor(s, hold.id, power.glyphs[0]!)
+    expect(paid.ok).toBe(true)
+    expect(s.insight).toBe(0)
+  })
+
+  it('treats for the hold only at full standing', () => {
+    const s = fresh()
+    const hold = REGIONS.find((r) => r.kind === 'foreign')!
+    s.regions[hold.id]!.discovered = true
+
+    expect(claimHold(s, hold.id).ok).toBe(false)
+    s.regions[hold.id]!.standing = CLAIM_STANDING
+    expect(claimHold(s, hold.id).ok).toBe(true)
+    expect(s.regions[hold.id]!.held).toBe(true)
+  })
+
+  it('refuses to claim wilderness, which has nobody to treat with', () => {
+    const s = fresh()
+    const wild = REGIONS.find((r) => r.kind === 'wild')!
+    s.regions[wild.id]!.discovered = true
+    const result = claimHold(s, wild.id)
+    expect(result.ok).toBe(false)
+  })
+
+  it('makes each reached hold a base that extends survey reach', () => {
+    const s = fresh()
+    expect(surveyReachBonus(s)).toBe(0)
+    const holds = REGIONS.filter((r) => r.kind === 'foreign').slice(0, 2)
+    for (const h of holds) s.regions[h.id]!.discovered = true
+    const found = surveyReachBonus(s)
+    expect(found).toBeGreaterThan(0)
+    // Being welcome there is worth more than merely knowing where it is.
+    s.regions[holds[0]!.id]!.standing = 75
+    expect(surveyReachBonus(s)).toBeGreaterThan(found)
+  })
+
+  it('lists only holds that have actually been found', () => {
+    const s = fresh()
+    expect(knownHolds(s)).toHaveLength(0)
+    const hold = REGIONS.find((r) => r.kind === 'foreign')!
+    s.regions[hold.id]!.discovered = true
+    expect(knownHolds(s)).toHaveLength(1)
   })
 })

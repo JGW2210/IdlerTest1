@@ -1,6 +1,7 @@
 import type { RegionDef, SiteDef, Terrain } from '@/engine/types'
+import { POWER_BY_PROVINCE, joinName, type PowerDef } from './powers'
 import { mulberry32, hashString } from '@/engine/rng'
-import { layer, strata, mine, wood, forage, water, dig, delve } from './siteKit'
+import { layer, strata, mine, wood, forage, water, dig, delve, market } from './siteKit'
 
 /**
  * The Outlands — rings 4 and 5, fifty-four regions, generated rather than
@@ -183,31 +184,142 @@ function makeSites(rng: () => number, id: string, terrain: Terrain, ring: number
   return sites
 }
 
+/**
+ * A foreign hold: settled ground belonging to one of the six powers, dropped
+ * into the wilds rather than sitting behind them.
+ *
+ * Their market is the payoff for the walk — it carries their trade-only metal,
+ * their goods, and (through the tutor panel) the glyphs only they will teach.
+ */
+function foreignHold(
+  rng: () => number,
+  id: string,
+  q: number,
+  r: number,
+  dist: number,
+  power: PowerDef,
+  province: Province,
+): RegionDef {
+  const name = joinName(pickFrom(rng, power.heads), pickFrom(rng, power.tails))
+  const base = dist === 4 ? 52 : 66
+  const terrain: Terrain = pickFrom(rng, ['town', 'town', ...province.terrains.slice(0, 2)])
+
+  const sites: SiteDef[] = [
+    market(`${id}_mk`, power.marketName, [0.34, 0.4], [
+      layer('The Open Floor', base, [
+        { item: power.goods[0] ?? 'leather', qty: [1, 3], weight: 40 },
+        { item: power.goods[1] ?? 'coal', qty: [1, 2], weight: 30 },
+        { item: power.material.id, qty: [1, 1], weight: 30 },
+      ]),
+      layer('Behind the Counter', base + 14, [
+        { item: power.material.id, qty: [1, 2], weight: 44 },
+        { item: power.goods[2] ?? 'silverOre', qty: [1, 2], weight: 28 },
+        { item: 'elderTablet', qty: [1, 1], weight: 28 },
+      ]),
+    ], `${power.name}. ${power.greeting}`),
+  ]
+
+  // Their holds sit on something worth holding.
+  const resource = province.signature
+  sites.push(
+    mine(`${id}_wk`, 'The Hold Works', [0.68, 0.62], [
+      layer('Worked Ground', base + 4, [
+        { item: pickFrom(rng, resource), qty: [1, 2], weight: 46 },
+        { item: pickFrom(rng, TERRAIN_YIELDS[terrain] ?? ['potsherd']), qty: [2, 3], weight: 34 },
+        { item: power.material.id, qty: [1, 1], weight: 20 },
+      ]),
+      layer('The Deep Grant', base + 20, [
+        { item: power.material.id, qty: [1, 2], weight: 40 },
+        { item: pickFrom(rng, resource), qty: [2, 3], weight: 36 },
+        { item: 'firstAgeTablet', qty: [1, 1], weight: 24 },
+      ]),
+    ], 'What they will let an outsider work, which is not the best of it.'),
+  )
+
+  return {
+    id,
+    name,
+    coord: { q, r },
+    terrain,
+    kind: 'foreign',
+    power: power.id,
+    // A hold is safer than the ground around it. That is rather the point of one.
+    danger: Math.round(3 + (dist - 4) * 2 + rng() * 2),
+    outland: true,
+    province: province.name,
+    scoutLevelReq: Math.round(34 + (dist - 4) * 16 + rng() * 8),
+    blurb: power.blurb,
+    sites,
+  }
+}
+
 let cache: RegionDef[] | null = null
 
+/**
+ * Rings four and five, interspersed.
+ *
+ * The gradient thins outward: ring four is roughly half holds and half wilds,
+ * ring five is mostly wild with one hold per march. Holds are chosen per
+ * sextant-and-ring group so every power is actually reachable rather than one
+ * of them happening to land nowhere.
+ */
 export function generateOutlands(seed = WORLD_SEED): RegionDef[] {
   if (seed === WORLD_SEED && cache) return cache
 
-  const out: RegionDef[] = []
-
+  // Group the frontier by march and ring, so placement is even by construction.
+  const groups = new Map<string, { q: number; r: number; dist: number; sx: number }[]>()
   for (let q = -5; q <= 5; q++) {
     for (let r = -5; r <= 5; r++) {
       const dist = hexDistance(q, r)
       if (dist < 4 || dist > 5) continue
+      const sx = sextant(q, r)
+      const key = `${sx}:${dist}`
+      const list = groups.get(key) ?? []
+      list.push({ q, r, dist, sx })
+      groups.set(key, list)
+    }
+  }
 
+  const holdAt = new Set<string>()
+  for (const [key, cells] of groups) {
+    const [, distStr] = key.split(':')
+    const dist = Number(distStr)
+    // Ring 4: half the march is settled. Ring 5: one hold, and a long walk.
+    const wanted = dist === 4 ? Math.max(1, Math.round(cells.length / 2)) : 1
+    const ordered = [...cells].sort((a, b) => (a.q - b.q) || (a.r - b.r))
+    const rng = mulberry32(seed ^ hashString(`hold${key}`))
+    const chosen = new Set<number>()
+    while (chosen.size < Math.min(wanted, ordered.length)) {
+      chosen.add(Math.floor(rng() * ordered.length))
+    }
+    for (const i of chosen) {
+      const c = ordered[i]!
+      holdAt.add(`${c.q},${c.r}`)
+    }
+  }
+
+  const out: RegionDef[] = []
+
+  for (const cells of groups.values()) {
+    for (const { q, r, dist } of cells) {
       const id = `out_${q + 5}_${r + 5}`
       const rng = mulberry32(seed ^ hashString(id))
       const province = PROVINCES[sextant(q, r)] as Province
+      const power = POWER_BY_PROVINCE[province.name]
+
+      if (holdAt.has(`${q},${r}`) && power) {
+        out.push(foreignHold(rng, id, q, r, dist, power, province))
+        continue
+      }
+
       const terrain = pickFrom(rng, province.terrains)
-
-      const name = `${pickFrom(rng, province.heads)}${pickFrom(rng, province.tails)}`
-
       out.push({
         id,
-        name,
+        name: joinName(pickFrom(rng, province.heads), pickFrom(rng, province.tails)),
         coord: { q, r },
         terrain,
-        // The frontier is dangerous in a way the cantref never is.
+        kind: 'wild',
+        // The wilds between holds are dangerous in a way the cantref never is.
         danger: Math.round(8 + (dist - 4) * 3 + rng() * 3),
         outland: true,
         province: province.name,
@@ -218,6 +330,7 @@ export function generateOutlands(seed = WORLD_SEED): RegionDef[] {
     }
   }
 
+  out.sort((a, b) => a.id.localeCompare(b.id))
   if (seed === WORLD_SEED) cache = out
   return out
 }

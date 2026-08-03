@@ -3,6 +3,7 @@ import type { Rng } from './rng'
 import { pickWeighted } from './rng'
 import { REGIONS, hexDistance } from '@/content/regions'
 import { levelOf } from './skills'
+import { surveyReachBonus } from './diplomacy'
 
 /**
  * Surveying (Cartography).
@@ -30,10 +31,17 @@ export function frontier(state: GameState): RegionDef[] {
 
 /** The next region a survey could reveal, given Cartography level. */
 export function surveyTargets(state: GameState): { region: RegionDef; reachable: boolean }[] {
-  const carto = levelOf(state, 'cartography')
+  // A reached foreign hold is a base you set out from, so every hold earned
+  // shortens the walk to everywhere past it.
+  const reach = levelOf(state, 'cartography') + surveyReachBonus(state)
   return frontier(state)
-    .map((region) => ({ region, reachable: carto >= (region.scoutLevelReq ?? 0) }))
+    .map((region) => ({ region, reachable: reach >= (region.scoutLevelReq ?? 0) }))
     .sort((a, b) => (a.region.scoutLevelReq ?? 0) - (b.region.scoutLevelReq ?? 0))
+}
+
+/** Effective survey reach: Cartography plus what the holds add. */
+export function surveyReach(state: GameState): number {
+  return levelOf(state, 'cartography') + surveyReachBonus(state)
 }
 
 /** Discovered regions that are not yet fully drawn. */
@@ -78,7 +86,7 @@ export function survey(state: GameState, rng: Rng): SurveyResult {
     return {
       kind: 'blocked',
       reason: next
-        ? `The way on needs Cartography ${next.region.scoutLevelReq}.`
+        ? `The way on needs a reach of ${next.region.scoutLevelReq}; yours is ${surveyReach(state)}.`
         : 'Nothing left within reach to survey.',
     }
   }
