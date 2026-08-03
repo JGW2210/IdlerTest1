@@ -168,8 +168,14 @@ These are unglamorous and they decide whether the game works:
 
 ## Part 2 — The Ballot
 
-Twelve decisions. Codes are `Article-Option`. Reply with a list —
-`I-B, II-A, III-A, …` — or override anything freely.
+> **Resolved.** The ballot returned
+> `I-B · II-A · III-A · IV-A · V-A · VI-B · VII-B · VIII-A · IX-A · X-A · XI-A · XII-C`.
+> Every recommendation below carried except **XII**, where Dark Arcane Slate was
+> chosen over the Assay Ledger look of the ballot page — the right call for a
+> screen people sit in front of for hours rather than read once. The options are
+> kept as written so the reasoning behind each choice stays legible.
+
+Twelve decisions. Codes are `Article-Option`.
 
 ### Ballot I — Shape of the core loop
 - **I-A · Single Focus.** One action at a time. Everything else is menus.

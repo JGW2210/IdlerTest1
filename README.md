@@ -4,33 +4,93 @@ An idle/incremental fantasy RPG for the web. You begin as one villager in a
 Camelot-style feudal holding with a borrowed pick and a handful of elemental
 runes; you end running a realm.
 
-**Status: design phase. No code written yet.**
+```bash
+npm install
+npm run dev        # play it
+npm test           # 24 engine tests
+npm run typecheck
+npm run build
+```
 
-## Where things are
+## Status
+
+The **framework** is built and runs: the tick engine, offline catch-up, the
+skill system, the material ladder, the rune grammar, the gambit combat resolver,
+the hex map, succession, and persistence all work end to end. It is a working
+skeleton with real content in it, not a finished game — see *What is not built
+yet* below.
+
+## Decisions taken
+
+All twelve articles of the ballot in [`docs/DESIGN-CHARTER.md`](docs/DESIGN-CHARTER.md)
+are resolved. The charter records the reasoning; this is the outcome.
+
+| # | Decision | Chosen |
+| --- | --- | --- |
+| I | Core loop | **Focus & Retinue** — one focused action at full rate plus background slots at 35% |
+| II | Offline | **Deterministic accrual**, 12h cap, fractional carry so nothing rounds away |
+| III | Long arc | **Bloodline & Succession** — the person resets, the world does not |
+| IV | Combat | **Gambit auto-battler** — a player-authored priority list |
+| V | Magic | **Rune Grammar** — Element + Form + Modifiers + Trigger, computed |
+| VI | Skill breadth | **Three children per parent** — 20 combat skills, variants inside a child |
+| VII | Materials | **Ladder × Alloy × Quality** |
+| VIII | Map | **Hex regions containing activity nodes** |
+| IX | Numbers | **Grounded** — no scientific notation anywhere |
+| X | Civilisation | **Continuous** — no mode switch |
+| XI | Stack | **React + TypeScript + Vite**, IndexedDB, content-as-data |
+| XII | Look | **Dark Arcane Slate** — near-black stone, rune-glow, gold leaf |
+
+## How it is put together
+
+```
+src/
+  engine/     pure, DOM-free, deterministic — the simulation
+    rng.ts        seeded streams; fractional expectation settling
+    curves.ts     every tuning constant and curve in one file
+    types.ts      all game state, JSON-serialisable throughout
+    skills.ts     additive parent xp, child level gating
+    runes.ts      spell composition and resolution
+    combat.ts     the gambit resolver
+    inventory.ts  stacking, equipping, quality-adjusted stats, sorting
+    tick.ts       the fixed-step simulation
+    offline.ts    catch-up (the same engine, longer stride)
+    save.ts       IndexedDB, ordered migrations, export/import
+  content/    data packs — skills, materials, items, recipes, regions, glyphs, foes
+  state/      the only bridge between engine and React
+  ui/         components
+```
+
+Two properties are load-bearing and worth preserving:
+
+1. **The engine never touches the DOM, a clock, or anything unserialisable.**
+   That is why offline catch-up is not a separate formula to keep in sync — it
+   is the same code with a longer stride — and why the simulation can move
+   behind a worker boundary later without a rewrite.
+2. **Content is data.** All 250+ items and their recipes are generated from a
+   thirteen-row material ladder. Adding a tier or a weapon shape is authoring,
+   not programming. `validateContent()` catches the referential typos the
+   compiler cannot, in tests always and at boot in dev.
+
+## What is not built yet
+
+Honest list, roughly in the order I would do them:
+
+- **The realm layer past its data model.** Regions carry loyalty, prosperity and
+  ownership, and nothing yet reads them. Diplomacy, war and the Act II civil
+  skills are stubs.
+- **Scouting.** Ring 2 exists in the content and the Cartography gate is
+  defined, but nothing lifts the fog yet.
+- **Archaeology's real payload.** It yields items; it should yield *glyphs and
+  recipes*. The `learnGlyph` path exists and is not wired to excavation.
+- **Insight** is displayed and never earned.
+- **The worker boundary.** The engine is worker-ready but currently runs on the
+  main thread via a fixed-timestep rAF loop.
+- Mastery trees, affixes on Legendary rolls, commissions, retinue training,
+  and consumables being consumable.
+
+## Files
 
 | File | What it is |
 | --- | --- |
-| [`docs/DESIGN-CHARTER.md`](docs/DESIGN-CHARTER.md) | Full scrutiny of the brief, the twelve-article decision ballot, and reference specifications for skills, curves, material strata, rune grammar, the opening map and the proposed architecture. |
-| [`docs/ballot.html`](docs/ballot.html) | The ballot as a laid-out page, with an interactive rune composer and a rendering of the opening map. Also serves as a live proposal for visual direction **XII-B**. |
-
-## The twelve open decisions
-
-Foundational articles come first; later ones depend on earlier ones.
-
-| # | Decision |
-| --- | --- |
-| I | Shape of the core loop |
-| II | Offline progression |
-| III | The long arc (reset / prestige) |
-| IV | Combat resolution |
-| V | The rune / magic system |
-| VI | Combat skill breadth |
-| VII | Material progression shape |
-| VIII | The map |
-| IX | Number scale |
-| X | Civilisation transition |
-| XI | Stack and persistence |
-| XII | Visual direction |
-
-Nothing is committed to until the ballot returns. Recommendations in the
-charter are opinions with reasons attached, not conclusions.
+| [`docs/DESIGN-CHARTER.md`](docs/DESIGN-CHARTER.md) | Scrutiny of the brief, the twelve-article ballot, and reference specs |
+| [`docs/ballot.html`](docs/ballot.html) | The ballot as a laid-out page, with an interactive rune composer |
