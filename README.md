@@ -194,5 +194,6 @@ Honest list, roughly in the order I would do them:
 
 | File | What it is |
 | --- | --- |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Every design question put to a poll and what was chosen, across all five rounds |
 | [`docs/DESIGN-CHARTER.md`](docs/DESIGN-CHARTER.md) | Scrutiny of the brief, the twelve-article ballot, and reference specs |
 | [`docs/ballot.html`](docs/ballot.html) | The ballot as a laid-out page, with an interactive rune composer |
