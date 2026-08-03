@@ -10,10 +10,11 @@ import { InventoryPanel } from '@/ui/InventoryPanel'
 import { CraftPanel } from '@/ui/CraftPanel'
 import { RunesPanel } from '@/ui/RunesPanel'
 import { CombatPanel } from '@/ui/CombatPanel'
+import { WarPanel } from '@/ui/WarPanel'
 import { RealmPanel } from '@/ui/RealmPanel'
 import { ActivityRail } from '@/ui/ActivityRail'
 
-type Tab = 'map' | 'skills' | 'pack' | 'craft' | 'runes' | 'gambits' | 'realm' | 'work'
+type Tab = 'map' | 'skills' | 'pack' | 'craft' | 'runes' | 'gambits' | 'war' | 'realm' | 'work'
 
 const TABS: { id: Tab; label: string; short: string; ico: string }[] = [
   { id: 'map', label: 'Cantref', short: 'Chart', ico: '⬡' },
@@ -22,6 +23,7 @@ const TABS: { id: Tab; label: string; short: string; ico: string }[] = [
   { id: 'craft', label: 'Workshop', short: 'Craft', ico: '⚒' },
   { id: 'runes', label: 'Runic Arts', short: 'Runes', ico: '✦' },
   { id: 'gambits', label: 'Gambits', short: 'Fight', ico: '⚔' },
+  { id: 'war', label: 'War', short: 'War', ico: '⚑' },
   { id: 'realm', label: 'Holding', short: 'Hold', ico: '⌂' },
 ]
 
@@ -206,6 +208,7 @@ export default function App() {
           {tab === 'craft' && <CraftPanel />}
           {tab === 'runes' && <RunesPanel />}
           {tab === 'gambits' && <CombatPanel />}
+          {tab === 'war' && <WarPanel />}
           {tab === 'realm' && <RealmPanel />}
           {tab === 'work' && (
             <div>

@@ -9,6 +9,7 @@ import { survey, surveyTime, surveyXp } from './survey'
 import { standingPerAction } from './diplomacy'
 import { POWER_BY_ID, STANDING_TIERS } from '@/content/powers'
 import { TABLET_BY_ITEM, decipher, describeOutcome } from './archaeology'
+import { tickBattle, considerMuster, resolveArrivals, commanderFalls, MUSTER_CHECK } from './warfare'
 import { refreshTechniques, startCombat, tickCombat } from './combat'
 import { settleExpectation, randInt, pickWeighted, stream } from './rng'
 import { findNode } from '@/content/regions'
@@ -63,8 +64,44 @@ export function step(state: GameState, dt: number, mode: TickMode, report: TickR
 
   if (state.combat) tickCombat(state, dt, rng)
 
+  tickWar(state, dt, rng)
+
   const unlocked = refreshTechniques(state)
   for (const t of unlocked) state.log.push({ t: state.elapsed, text: `Technique learned: ${t}.` })
+}
+
+/**
+ * The war layer, ticked alongside everything else.
+ *
+ * Musters are only *considered* on a slow cadence rather than every step, so a
+ * twelve-hour catch-up does not roll the dice four thousand times and bury the
+ * player under an invasion for every region they hold.
+ */
+function tickWar(state: GameState, dt: number, rng: Rng): void {
+  const before = state.battle
+  if (before) {
+    tickBattle(state, dt, rng)
+    // A battle that ended in defeat is where a commander can be lost. Losing
+    // the character triggers succession early, which is the whole reason the
+    // plan wants a withdrawal rule in it.
+    if (!state.battle && before.side === 'attack' && before.enemyStrength > 0) {
+      if (commanderFalls(state, rng)) {
+        state.character.health = 1
+        state.pendingSuccession = true
+        state.log.push({
+          t: state.elapsed,
+          text: `${state.character.name} does not come back from the field. The holding wants an heir.`,
+        })
+      }
+    }
+  }
+
+  state.musterTimer = (state.musterTimer ?? 0) + dt
+  if (state.musterTimer >= MUSTER_CHECK) {
+    state.musterTimer -= MUSTER_CHECK
+    considerMuster(state, rng)
+  }
+  resolveArrivals(state)
 }
 
 /** Advance by whole fixed steps, returning what was gained. */

@@ -30,7 +30,10 @@ export function RealmPanel() {
   if (!state) return null
 
   const age = Math.floor(state.character.age)
-  const canSucceed = age >= RETIREMENT_AGE
+  // A commander lost in battle opens succession regardless of age — the whole
+  // reason war ties into the bloodline loop.
+  const fallen = state.pendingSuccession
+  const canSucceed = fallen || age >= RETIREMENT_AGE
   const yearsLeft = Math.max(0, RETIREMENT_AGE - state.character.age)
   const held = REGIONS.filter((r) => state.regions[r.id]?.held)
   const known = REGIONS.filter((r) => state.regions[r.id]?.discovered)
@@ -66,7 +69,9 @@ export function RealmPanel() {
             )}
 
             <p style={{ color: 'var(--text-2)', fontSize: '0.85rem', margin: '0 0 0.75rem' }}>
-              {canSucceed
+              {fallen
+                ? `Your commander fell in the field. The holding has no head until an heir takes it, and the war does not stop for that.`
+                : canSucceed
                 ? `Your character is ${age} and may pass the holding on. The heir inherits ${Math.round(INHERITANCE_RATE * 100)}% of every skill's experience, a permanent trait earned from whatever this life was best at, and a compounding bonus to all future experience. The map, the realm, your glyphs and your spells persist.`
                 : `Succession opens at ${RETIREMENT_AGE}. About ${Math.ceil((yearsLeft * SECONDS_PER_YEAR) / 60)} minutes of play away.`}
             </p>
@@ -151,7 +156,11 @@ export function RealmPanel() {
                         disabled={!h.claimable}
                         onClick={() => claim(h.region.id)}
                       >
-                        {h.claimable ? 'Treat for the hold' : `Treat at standing ${CLAIM_STANDING}`}
+                        {!h.treats
+                          ? 'Will never treat — take it or leave it'
+                          : h.claimable
+                            ? 'Treat for the hold'
+                            : `Treat at standing ${CLAIM_STANDING}`}
                       </button>
                     )}
                   </div>

@@ -378,6 +378,99 @@ export interface RetinueMember {
   assignment: Assignment
 }
 
+// ------------------------------------------------------------------ warfare
+
+/**
+ * War (all four stakes carried).
+ *
+ * Companies are raised from the levy your held ground can bear and armed from
+ * your own forge — which is what finally makes the metal ladder produce
+ * something other than one character's sword. Battles resolve on their own,
+ * driven by a plan written in the same conditional language as personal combat.
+ *
+ * Everything here is lossy on purpose: companies die and stay dead, ground can
+ * be taken back off you, standing collapses across every power that is watching,
+ * and a commander who stays too long in a losing fight does not come home.
+ */
+
+export type CompanyRole = 'foot' | 'horse' | 'bow' | 'engine'
+
+export interface Company {
+  uid: string
+  name: string
+  role: CompanyRole
+  /** Men. Falls as casualties mount and does not come back on its own. */
+  strength: number
+  /** What they were raised at, for the roster readout. */
+  raisedAt: number
+  /** Material tier of their arms, 0 = whatever they brought from the fields. */
+  arms: number
+  /** 0-100. Low morale routs a company out of the line. */
+  morale: number
+  /** Battles survived. Veterans hit harder. */
+  veterancy: number
+  /** Which held region they were raised from and return to. */
+  home: RegionId
+}
+
+export type BattleStance = 'hold' | 'press' | 'flank' | 'volley' | 'engines' | 'withdraw'
+
+export type BattleCondition =
+  | { kind: 'always' }
+  | { kind: 'ourLossesAbove'; pct: number }
+  | { kind: 'theirLossesAbove'; pct: number }
+  | { kind: 'moraleBelow'; pct: number }
+  | { kind: 'outnumbered' }
+  | { kind: 'haveRole'; role: CompanyRole }
+
+export interface BattleRule {
+  uid: string
+  enabled: boolean
+  condition: BattleCondition
+  stance: BattleStance
+}
+
+export interface BattleLogEntry {
+  t: number
+  text: string
+  kind: 'clash' | 'rout' | 'loss' | 'win' | 'info' | 'fall'
+}
+
+export type BattleSide = 'attack' | 'defend'
+
+export interface Battle {
+  region: RegionId
+  side: BattleSide
+  /** Which power is on the other side. */
+  power: string
+  /** Company uids committed. Companies not listed stayed home. */
+  committed: string[]
+  /** Strength each company started the battle with, for the casualty report. */
+  startStrength: Record<string, number>
+  enemyStrength: number
+  enemyMaxStrength: number
+  /** Seconds until the next exchange. */
+  cooldown: number
+  elapsed: number
+  stance: BattleStance
+  log: BattleLogEntry[]
+}
+
+/**
+ * A muster the enemy has begun and you can see coming.
+ *
+ * Telegraphed on purpose: an idle game must not resolve a region loss during
+ * the eight hours you were asleep without ever having shown you it was coming.
+ */
+export interface Threat {
+  uid: string
+  region: RegionId
+  power: string
+  strength: number
+  /** Simulated seconds at which they arrive. */
+  arrivesAt: number
+}
+
 // ---------------------------------------------------------------------- save
 
 export interface Character {
@@ -438,5 +531,19 @@ export interface GameState {
   dropCarry: Record<string, number>
 
   unlockedTechniques: TechniqueId[]
+
+  /** Standing companies, and what they are for. */
+  companies: Company[]
+  battlePlan: BattleRule[]
+  battle: Battle | null
+  threats: Threat[]
+  /** Powers you have marched on. They remember. */
+  atWarWith: string[]
+  /** Seconds since a power last considered marching. Musters are checked on a
+   *  slow cadence so a long catch-up does not roll an invasion per tick. */
+  musterTimer: number
+  /** Set when the commander falls in battle; succession opens regardless of age. */
+  pendingSuccession: boolean
+
   log: { t: number; text: string }[]
 }

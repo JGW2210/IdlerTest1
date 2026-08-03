@@ -16,6 +16,10 @@ import { LORE } from '@/content/lore'
 import { survey, surveyTime } from './survey'
 import { decipher, candidateGlyphs, TABLET_BY_ITEM } from './archaeology'
 import { migrate } from './save'
+import {
+  levyCapacity, levyInUse, raiseCompany, armCompany, armsCost, companyPower,
+  beginAssault, declareWar, considerMuster, resolveArrivals,
+} from './warfare'
 import { SAVE_VERSION } from './createState'
 import { catchUp } from './offline'
 
@@ -613,13 +617,31 @@ describe('the powers', () => {
 
   it('treats for the hold only at full standing', () => {
     const s = fresh()
-    const hold = REGIONS.find((r) => r.kind === 'foreign')!
+    const buyable = POWERS.filter((p) => p.disposition !== 'implacable').map((p) => p.id)
+    const hold = REGIONS.find((r) => r.kind === 'foreign' && buyable.includes(r.power!))!
     s.regions[hold.id]!.discovered = true
 
     expect(claimHold(s, hold.id).ok).toBe(false)
     s.regions[hold.id]!.standing = CLAIM_STANDING
     expect(claimHold(s, hold.id).ok).toBe(true)
     expect(s.regions[hold.id]!.held).toBe(true)
+  })
+
+  it('never sells an implacable power\'s hold, at any standing', () => {
+    const s = fresh()
+    const implacable = POWERS.filter((p) => p.disposition === 'implacable').map((p) => p.id)
+    expect(implacable.length).toBeGreaterThan(0)
+    const hold = REGIONS.find((r) => r.kind === 'foreign' && implacable.includes(r.power!))!
+    s.regions[hold.id]!.discovered = true
+    s.regions[hold.id]!.standing = 100
+
+    const result = claimHold(s, hold.id)
+    expect(result.ok).toBe(false)
+    expect(s.regions[hold.id]!.held).toBe(false)
+    // The diplomacy summary must say so rather than dangling a button.
+    const summary = knownHolds(s).find((h) => h.region.id === hold.id)!
+    expect(summary.treats).toBe(false)
+    expect(summary.claimable).toBe(false)
   })
 
   it('refuses to claim wilderness, which has nobody to treat with', () => {
@@ -648,5 +670,218 @@ describe('the powers', () => {
     const hold = REGIONS.find((r) => r.kind === 'foreign')!
     s.regions[hold.id]!.discovered = true
     expect(knownHolds(s)).toHaveLength(1)
+  })
+})
+
+// ===========================================================================
+// War
+// ===========================================================================
+
+describe('war', () => {
+  it('bounds the levy by the ground you hold', () => {
+    const s = fresh()
+    const alone = levyCapacity(s)
+    expect(alone).toBeGreaterThan(0)
+
+    s.regions['greyhollow']!.held = true
+    s.regions['greyhollow']!.prosperity = 20
+    expect(levyCapacity(s)).toBeGreaterThan(alone)
+  })
+
+  it('refuses to raise beyond the levy, and charges by role', () => {
+    const s = fresh()
+    const capacity = levyCapacity(s)
+
+    const tooBig = raiseCompany(s, 'foot', capacity + 50, 'ashcombe')
+    expect(tooBig.ok).toBe(false)
+    expect(s.companies).toHaveLength(0)
+
+    const ok = raiseCompany(s, 'foot', 20, 'ashcombe')
+    expect(ok.ok).toBe(true)
+    expect(levyInUse(s)).toBe(20)
+
+    // Horse cost 1.8x, so the same men eat more of the levy.
+    raiseCompany(s, 'horse', 10, 'ashcombe')
+    expect(levyInUse(s)).toBe(20 + 18)
+  })
+
+  it('will not raise from ground you do not hold', () => {
+    const s = fresh()
+    const result = raiseCompany(s, 'foot', 20, 'greyhollow')
+    expect(result.ok).toBe(false)
+  })
+
+  it('arms companies out of the forge, consuming bars', () => {
+    const s = fresh()
+    raiseCompany(s, 'foot', 30, 'ashcombe')
+    const c = s.companies[0]!
+    const before = companyPower(c)
+
+    // Nothing in the pack yet.
+    expect(armCompany(s, c.uid, 'steelBar').ok).toBe(false)
+
+    const cost = armsCost(c.strength, 4)
+    addItem(s, 'steelBar', cost)
+    const armed = armCompany(s, c.uid, 'steelBar')
+    expect(armed.ok).toBe(true)
+    expect(countItem(s, 'steelBar')).toBe(0)
+    expect(c.arms).toBe(4)
+    // Arms are the dominant term, so this must be a large jump.
+    expect(companyPower(c)).toBeGreaterThan(before * 1.8)
+
+    // And they will not downgrade.
+    addItem(s, 'copperBar', 50)
+    expect(armCompany(s, c.uid, 'copperBar').ok).toBe(false)
+  })
+
+  it('resolves an assault over time and takes the hold on a win', () => {
+    const s = fresh()
+    const hold = REGIONS.find((r) => r.kind === 'foreign')!
+    s.regions[hold.id]!.discovered = true
+    s.regions['ashcombe']!.prosperity = 400
+
+    raiseCompany(s, 'foot', 400, 'ashcombe')
+    const c = s.companies[0]!
+    addItem(s, 'aurelithBar', 500)
+    armCompany(s, c.uid, 'aurelithBar')
+
+    expect(beginAssault(s, hold.id, [c.uid]).ok).toBe(true)
+    expect(s.battle).not.toBeNull()
+
+    stepAll(s, 900, 'live')
+    expect(s.battle).toBeNull()
+    expect(s.regions[hold.id]!.held).toBe(true)
+    expect(c.veterancy).toBeGreaterThan(0)
+  })
+
+  it('makes marching cost standing with everyone, not just the target', () => {
+    const s = fresh()
+    for (const r of REGIONS) {
+      if (r.kind === 'foreign') { s.regions[r.id]!.discovered = true; s.regions[r.id]!.standing = 80 }
+    }
+    const hold = REGIONS.find((r) => r.kind === 'foreign')!
+    const bystander = REGIONS.find((r) => r.kind === 'foreign' && r.power !== hold.power)!
+
+    declareWar(s, hold.power!)
+
+    expect(s.regions[hold.id]!.standing).toBeLessThan(30)
+    // Onlookers take note without breaking off entirely.
+    expect(s.regions[bystander.id]!.standing).toBeLessThan(80)
+    expect(s.regions[bystander.id]!.standing).toBeGreaterThan(50)
+    expect(s.atWarWith).toContain(hold.power)
+  })
+
+  it('follows the battle plan, and a withdrawal rule keeps the companies', () => {
+    const s = fresh()
+    const hold = REGIONS.find((r) => r.kind === 'foreign')!
+    s.regions[hold.id]!.discovered = true
+    s.regions['ashcombe']!.prosperity = 60
+
+    // A hopeless force, but a plan that knows to leave.
+    raiseCompany(s, 'foot', 30, 'ashcombe')
+    const c = s.companies[0]!
+    s.battlePlan = [
+      { uid: 'w1', enabled: true, condition: { kind: 'ourLossesAbove', pct: 0.15 }, stance: 'withdraw' },
+      { uid: 'w2', enabled: true, condition: { kind: 'always' }, stance: 'hold' },
+    ]
+
+    beginAssault(s, hold.id, [c.uid])
+    stepAll(s, 600, 'live')
+
+    expect(s.battle).toBeNull()
+    // Withdrawn, not destroyed.
+    expect(c.strength).toBeGreaterThan(0)
+    expect(s.regions[hold.id]!.held).toBe(false)
+  })
+
+  it('only offers a stance the committed companies can actually perform', () => {
+    const s = fresh()
+    s.regions['ashcombe']!.prosperity = 60
+    raiseCompany(s, 'foot', 30, 'ashcombe')
+    const foot = s.companies[0]!
+    // A plan that says flank, with nobody mounted, must fall through to the
+    // next rule rather than silently doing nothing.
+    s.battlePlan = [
+      { uid: 'f1', enabled: true, condition: { kind: 'always' }, stance: 'flank' },
+      { uid: 'f2', enabled: true, condition: { kind: 'always' }, stance: 'press' },
+    ]
+    const hold = REGIONS.find((r) => r.kind === 'foreign')!
+    s.regions[hold.id]!.discovered = true
+    beginAssault(s, hold.id, [foot.uid])
+    stepAll(s, 30, 'live')
+    expect(s.battle?.stance).not.toBe('flank')
+  })
+
+  it('telegraphs a muster instead of taking ground unannounced', () => {
+    const s = fresh()
+    s.regions['greyhollow']!.held = true
+    for (const r of REGIONS) if (r.kind === 'foreign') s.regions[r.id]!.discovered = true
+
+    // Force a muster.
+    const rng = mulberry32(4)
+    for (let i = 0; i < 40 && s.threats.length === 0; i++) considerMuster(s, rng)
+    expect(s.threats.length).toBeGreaterThan(0)
+
+    const threat = s.threats[0]!
+    // It must arrive in the future, with real warning.
+    expect(threat.arrivesAt).toBeGreaterThan(s.elapsed + 600)
+    // And the region is still yours until then.
+    expect(s.regions[threat.region]!.held).toBe(true)
+  })
+
+  it('loses the region when a muster arrives and nobody was raised there', () => {
+    const s = fresh()
+    s.regions['greyhollow']!.held = true
+    s.threats = [{ uid: 't1', region: 'greyhollow', power: 'corhen', strength: 200, arrivesAt: 0 }]
+
+    resolveArrivals(s)
+    expect(s.regions['greyhollow']!.held).toBe(false)
+    expect(s.threats).toHaveLength(0)
+  })
+
+  it('fights the defence when companies are raised there', () => {
+    const s = fresh()
+    s.regions['greyhollow']!.held = true
+    s.regions['greyhollow']!.prosperity = 40
+    raiseCompany(s, 'foot', 40, 'greyhollow')
+    s.threats = [{ uid: 't1', region: 'greyhollow', power: 'corhen', strength: 200, arrivesAt: 0 }]
+
+    resolveArrivals(s)
+    expect(s.battle?.side).toBe('defend')
+    expect(s.regions['greyhollow']!.held).toBe(true)
+  })
+
+  it('carries the war across succession', () => {
+    const s = fresh()
+    s.regions['ashcombe']!.prosperity = 60
+    raiseCompany(s, 'foot', 30, 'ashcombe')
+    s.atWarWith = ['corhen']
+
+    const heir = succeed(s, 'Heir')
+    // Companies belong to the realm, not to the person who raised them.
+    expect(heir.companies).toHaveLength(1)
+    expect(heir.atWarWith).toContain('corhen')
+    expect(heir.pendingSuccession).toBe(false)
+  })
+
+  it('migrates a v3 save into the war layer', () => {
+    const legacy: Record<string, unknown> = {
+      version: 3,
+      seed: 1, rngCounter: 0, uidCounter: 5, elapsed: 0, lastSeen: 0,
+      character: { name: 'Old', age: 20, health: 10, stamina: 10, mana: 10 },
+      legacy: { generation: 1, traits: [], xpBonus: 1 },
+      skills: {}, inventory: [], equipment: {}, coin: 0, insight: 0,
+      focus: { kind: 'idle', progress: 0 }, retinue: [],
+      regions: { ashcombe: { discovered: true, held: true, loyalty: 100, prosperity: 10, surveyed: 1, standing: 0 } },
+      knownGlyphs: [], lore: [], mapFragments: [], spells: [], gambits: [], combat: null,
+      dropCarry: {}, unlockedTechniques: [], log: [],
+    }
+    const migrated = migrate(legacy)
+    expect(migrated.version).toBe(SAVE_VERSION)
+    expect(migrated.companies).toEqual([])
+    expect(migrated.threats).toEqual([])
+    expect(migrated.atWarWith).toEqual([])
+    expect(migrated.battle).toBeNull()
+    expect(migrated.pendingSuccession).toBe(false)
   })
 })

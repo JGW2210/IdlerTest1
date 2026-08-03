@@ -152,11 +152,22 @@ export function validateContent(): string[] {
     }
     // A power with no hold on the map teaches nobody and trades with nobody.
     if (!holdsPerPower.get(p.id)) errors.push(`power ${p.id}: no hold anywhere on the map`)
+    if (p.aggression < 0) errors.push(`power ${p.id}: negative aggression`)
+    if (p.garrison <= 0) errors.push(`power ${p.id}: garrison must be positive`)
     // Standing tops out at 100, which teaches at most STANDING_TIERS' last tier.
     const maxTeach = STANDING_TIERS[STANDING_TIERS.length - 1]!.teaches
     if (p.glyphs.length > maxTeach) {
       errors.push(`power ${p.id}: teaches ${p.glyphs.length} glyphs but standing only ever opens ${maxTeach}`)
     }
+  }
+
+  // At least one power must refuse to treat, or war has no reason to exist; and
+  // at least one must be buyable, or diplomacy does not either.
+  if (!POWERS.some((p) => p.disposition === 'implacable')) {
+    errors.push('no power is implacable, so nothing ever has to be fought for')
+  }
+  if (!POWERS.some((p) => p.disposition !== 'implacable')) {
+    errors.push('every power is implacable, so standing and tutors are pointless')
   }
 
   // Rings 3-5 must each carry both settled ground and wilds; that interspersal

@@ -1,7 +1,7 @@
 import type { GameState, RegionDef, RegionId } from './types'
 import { REGIONS, REGION_BY_ID } from '@/content/regions'
 import {
-  POWER_BY_ID, CLAIM_STANDING, glyphPrice, glyphsOffered, standingTier, type PowerDef,
+  POWER_BY_ID, CLAIM_STANDING, glyphPrice, glyphsOffered, standingTier, willTreat, type PowerDef,
 } from '@/content/powers'
 import { GLYPH_BY_ID } from '@/content/glyphs'
 
@@ -42,6 +42,8 @@ export interface HoldSummary {
   tier: { at: number; name: string; teaches: number }
   /** Glyphs they will currently teach, and whether each is already known. */
   offers: { glyph: string; name: string; price: number; known: boolean }[]
+  /** Whether this people will ever sell the hold. */
+  treats: boolean
   /** Glyphs held back until standing rises. */
   withheld: number
   claimable: boolean
@@ -74,7 +76,8 @@ export function knownHolds(state: GameState): HoldSummary[] {
         known: known.has(g),
       })),
       withheld: power.glyphs.length - offered.length,
-      claimable: standing >= CLAIM_STANDING && !rs.held,
+      treats: willTreat(power),
+      claimable: willTreat(power) && standing >= CLAIM_STANDING && !rs.held,
       held: rs.held,
     })
   }
@@ -134,8 +137,15 @@ export function claimHold(state: GameState, regionId: RegionId): ClaimResult {
   const rs = state.regions[regionId]
   if (!rs?.discovered) return { ok: false, reason: 'You have not found it.' }
   if (rs.held) return { ok: false, reason: 'Already yours.' }
-  if (region.kind === 'foreign' && rs.standing < CLAIM_STANDING) {
-    return { ok: false, reason: `They will treat at standing ${CLAIM_STANDING}; you are at ${Math.floor(rs.standing)}.` }
+  if (region.kind === 'foreign') {
+    const power = powerOf(region)
+    // Two of the six will not be bought at any price. The only way in is through.
+    if (power && !willTreat(power)) {
+      return { ok: false, reason: `${power.name} will never treat. If you want it, take it.` }
+    }
+    if (rs.standing < CLAIM_STANDING) {
+      return { ok: false, reason: `They will treat at standing ${CLAIM_STANDING}; you are at ${Math.floor(rs.standing)}.` }
+    }
   }
   if (region.kind === 'wild') return { ok: false, reason: 'There is nobody there to treat with.' }
 

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Assignment, GambitRule, GameState, Spell, EquipSlot } from '@/engine/types'
+import type { Assignment, BattleRule, CompanyRole, GambitRule, GameState, Spell, EquipSlot } from '@/engine/types'
 import { TICK_SECONDS } from '@/engine/curves'
 import { createState, succeed } from '@/engine/createState'
 import { stepAll, assignFocus, assignRetinue } from '@/engine/tick'
@@ -8,6 +8,7 @@ import { loadGame, saveGame, exportSave, importSave, clearGame } from '@/engine/
 import { equip, unequip, nextUid } from '@/engine/inventory'
 import { canInscribe } from '@/engine/runes'
 import { learnFromTutor, claimHold } from '@/engine/diplomacy'
+import { defaultBattlePlan, raiseCompany, disbandCompany, armCompany, beginAssault } from '@/engine/warfare'
 
 /**
  * The bridge between the pure engine and React.
@@ -47,6 +48,13 @@ interface Store {
   learnFromTutor: (regionId: string, glyphId: string) => void
   claimHold: (regionId: string) => void
 
+  raiseCompany: (role: CompanyRole, strength: number, home: string) => void
+  disbandCompany: (uid: string) => void
+  armCompany: (uid: string, bar: string) => void
+  setBattlePlan: (rules: BattleRule[]) => void
+  addBattleRule: () => void
+  beginAssault: (regionId: string, committed: string[]) => void
+
   succeedNow: (heirName: string) => void
 
   exportToText: () => string
@@ -83,6 +91,8 @@ export const useGame = create<Store>((set, get) => {
 
       let offline: OfflineResult | null = null
       if (state) {
+        // A save migrated up from before the war layer has no plan yet.
+        if (!state.battlePlan?.length) state.battlePlan = defaultBattlePlan(state)
         offline = catchUp(state)
       } else {
         state = createState()
@@ -164,6 +174,47 @@ export const useGame = create<Store>((set, get) => {
       const s = get().state
       if (!s) return
       const result = claimHold(s, regionId)
+      if (!result.ok) { set({ error: result.reason }); return }
+      set({ revision: get().revision + 1, error: null })
+    },
+
+    raiseCompany(role, strength, home) {
+      const s = get().state
+      if (!s) return
+      const result = raiseCompany(s, role, strength, home)
+      if (!result.ok) { set({ error: result.reason }); return }
+      set({ revision: get().revision + 1, error: null })
+    },
+
+    disbandCompany(uid) { mutate((s) => { disbandCompany(s, uid) }) },
+
+    armCompany(uid, bar) {
+      const s = get().state
+      if (!s) return
+      const result = armCompany(s, uid, bar)
+      if (!result.ok) { set({ error: result.reason }); return }
+      set({ revision: get().revision + 1, error: null })
+    },
+
+    setBattlePlan(rules) { mutate((s) => { s.battlePlan = rules }) },
+
+    /** New rules land above the last, which should stay unconditional. */
+    addBattleRule() {
+      mutate((s) => {
+        const rule: BattleRule = {
+          uid: nextUid(s, 'b'),
+          enabled: true,
+          condition: { kind: 'always' },
+          stance: 'hold',
+        }
+        s.battlePlan = [...s.battlePlan.slice(0, -1), rule, ...s.battlePlan.slice(-1)]
+      })
+    },
+
+    beginAssault(regionId, committed) {
+      const s = get().state
+      if (!s) return
+      const result = beginAssault(s, regionId, committed)
       if (!result.ok) { set({ error: result.reason }); return }
       set({ revision: get().revision + 1, error: null })
     },

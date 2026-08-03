@@ -46,6 +46,26 @@ export interface PowerDef {
   marketName: string
   /** How they greet a stranger. Shown at zero standing. */
   greeting: string
+  /**
+   * Whether they will ever treat.
+   *
+   *   tradeable  — will sell the hold at full standing, as before
+   *   wary       — will treat, but only after you have gone well past civil
+   *   implacable — will never treat at any standing. The only way in is through.
+   *
+   * This is the answer to "why fight when you can buy". Two of the six will not
+   * be bought, and one of those wants your ground.
+   */
+  disposition: 'tradeable' | 'wary' | 'implacable'
+  /**
+   * How badly they want land of yours. 0 never marches; higher musters sooner
+   * and heavier. War is mostly something that happens to you.
+   */
+  aggression: number
+  /** How hard their holds are to take, before region danger is folded in. */
+  garrison: number
+  /** Said when they muster against you. */
+  warcry: string
 }
 
 export const POWERS: PowerDef[] = [
@@ -64,6 +84,10 @@ export const POWERS: PowerDef[] = [
     exclusive: ['ward'],
     marketName: 'The Oath-Hall',
     greeting: 'They will hear you out. They will not offer you a seat.',
+    disposition: 'wary',
+    aggression: 3,
+    garrison: 1.15,
+    warcry: 'Kaldmark send word first, which is more courtesy than most get.',
   },
   {
     id: 'ashband',
@@ -80,6 +104,10 @@ export const POWERS: PowerDef[] = [
     exclusive: ['amplify'],
     marketName: 'The Wending Market',
     greeting: 'They are camped here this season. They will not be next.',
+    disposition: 'tradeable',
+    aggression: 2,
+    garrison: 0.9,
+    warcry: 'The Ashband are moving, and they move fast.',
   },
   {
     id: 'morvaren',
@@ -96,6 +124,10 @@ export const POWERS: PowerDef[] = [
     exclusive: ['siphon'],
     marketName: 'The Stilt Market',
     greeting: 'They watched you approach for two hours and let you.',
+    disposition: 'tradeable',
+    aggression: 1,
+    garrison: 1.0,
+    warcry: 'The fen is rising, and the Thegns are coming up with it.',
   },
   {
     id: 'corhen',
@@ -112,6 +144,10 @@ export const POWERS: PowerDef[] = [
     exclusive: ['echo'],
     marketName: 'The Chapter House',
     greeting: 'They know what you have in your pack. They have not said so.',
+    disposition: 'implacable',
+    aggression: 4,
+    garrison: 1.45,
+    warcry: 'The Old Watch have opened a barrow on purpose. That is the warning.',
   },
   {
     id: 'tirmorgant',
@@ -128,6 +164,10 @@ export const POWERS: PowerDef[] = [
     exclusive: ['hasten'],
     marketName: 'The Keel Market',
     greeting: 'They will trade. They will not tell you where they have been.',
+    disposition: 'tradeable',
+    aggression: 2,
+    garrison: 0.95,
+    warcry: 'Nine keels on the tide line, and none of them carrying wool.',
   },
   {
     id: 'hollowcourt',
@@ -144,6 +184,10 @@ export const POWERS: PowerDef[] = [
     exclusive: ['beam', 'empower'],
     marketName: 'The Bargain Bower',
     greeting: 'You are welcome. You are asked to remember that you were welcomed.',
+    disposition: 'implacable',
+    aggression: 5,
+    garrison: 1.3,
+    warcry: 'The Court have called in a promise you do not remember making.',
   },
 ]
 
@@ -210,3 +254,11 @@ export function glyphPrice(index: number): number {
 
 /** Standing at which a hold can be claimed outright. */
 export const CLAIM_STANDING = 100
+
+/** A wary power wants rather more than civility before it will part with a hold. */
+export const WARY_CLAIM_STANDING = 100
+
+/** Whether this people can be bought at all. */
+export function willTreat(power: PowerDef): boolean {
+  return power.disposition !== 'implacable'
+}

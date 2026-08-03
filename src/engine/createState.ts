@@ -4,8 +4,9 @@ import { SKILLS } from '@/content/skills'
 import { REGIONS, STARTING_REGIONS } from '@/content/regions'
 import { STARTING_GLYPHS } from '@/content/glyphs'
 import { addItem, nextUid } from './inventory'
+import { defaultBattlePlan } from './warfare'
 
-export const SAVE_VERSION = 3
+export const SAVE_VERSION = 4
 
 function blankSkills(): Record<SkillId, SkillState> {
   const out: Record<SkillId, SkillState> = {}
@@ -58,6 +59,13 @@ export function createState(seed = Math.floor(Math.random() * 0xffffffff), name 
     combat: null,
     dropCarry: {},
     unlockedTechniques: [],
+    companies: [],
+    battlePlan: [],
+    battle: null,
+    threats: [],
+    atWarWith: [],
+    musterTimer: 0,
+    pendingSuccession: false,
     log: [{ t: 0, text: 'You inherit a pick, a hand-me-down knife, and forty households who expect nothing of you.' }],
   }
 
@@ -68,6 +76,7 @@ export function createState(seed = Math.floor(Math.random() * 0xffffffff), name 
   addItem(state, 'breadRation', 5)
 
   state.gambits = defaultGambits(state)
+  state.battlePlan = defaultBattlePlan(state)
 
   const s = vitals(state)
   state.character.health = s.health
@@ -129,6 +138,16 @@ export function succeed(state: GameState, heirName: string): GameState {
   // Inherited spells and retinue carry their uids across, so the counter has to
   // come with them or the heir's first craft collides with a forebear's tablet.
   next.uidCounter = Math.max(next.uidCounter, state.uidCounter)
+
+  // The heir inherits a war already in progress. Companies are the realm's, not
+  // the person's — they do not go home because their commander died.
+  next.companies = structuredClone(state.companies)
+  next.battlePlan = structuredClone(state.battlePlan)
+  next.threats = structuredClone(state.threats)
+  next.atWarWith = [...state.atWarWith]
+  next.musterTimer = state.musterTimer
+  // The heir is not the one who fell.
+  next.pendingSuccession = false
 
   next.log = [{
     t: state.elapsed,

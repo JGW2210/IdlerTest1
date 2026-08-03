@@ -7,7 +7,7 @@ runes; you end running a realm.
 ```bash
 npm install
 npm run dev        # play it
-npm test           # 53 engine tests
+npm test           # 67 engine tests
 npm run typecheck
 npm run build
 ```
@@ -88,6 +88,39 @@ a tablet, and what comes out feeds a different system each time:
 
 That chain is why the depth layers exist at all.
 
+## War
+
+Claiming a hold at full standing already worked, so war needed a reason to
+exist. Two of the six powers are **implacable** — the Cor Hen and the Hollow
+Court will not treat at any standing, and the only way in is through. The rest
+have an **aggression** rating and muster against ground *you* hold, so war is
+mostly not your idea.
+
+**Companies** are raised from the levy your held regions can bear (prosperity
+and loyalty feed it) and armed from your own forge. Arms tier is the dominant
+term in a company's power — thirty men in steel are worth nearly three times
+thirty men with farm tools — which finally makes the metal ladder an industry
+rather than a way to make one sword.
+
+**Battles fight themselves** from a plan written in the same conditional
+language as personal combat: *IF we have lost 60% THEN withdraw*. Stances that
+need a role they do not have fall through to the next rule, so a plan that says
+*flank* with no horse does not silently stall.
+
+All four stakes are live:
+
+- companies die and stay dead
+- a lost assault can kill your commander, opening succession early — the heir
+  inherits the war, the companies and the grudges
+- marching on one power costs standing with every power watching
+- a failed defence loses the region outright, and a muster arriving where you
+  raised nobody takes it unopposed
+
+Musters are telegraphed with roughly twenty minutes' warning and only *checked*
+every fifteen simulated minutes, so a twelve-hour catch-up cannot roll an
+invasion per tick or take ground while you were asleep without ever showing you
+it was coming.
+
 ## Decisions taken
 
 All twelve articles of the ballot in [`docs/DESIGN-CHARTER.md`](docs/DESIGN-CHARTER.md)
@@ -143,14 +176,15 @@ Two properties are load-bearing and worth preserving:
 
 Honest list, roughly in the order I would do them:
 
-- **War.** Diplomacy exists as standing, trade and claim; there is no way to take
-  a hold that will not treat, and no garrison, levy or front.
-- **The realm layer past claiming.** Regions carry loyalty and prosperity, and
-  once claimed nothing yet consumes or produces them.
-- **Recipes from tablets and tutors.** Both give glyphs, lore and map fragments,
-  but not the recipes the lore keeps alluding to — the six trade metals have no
-  smithing lines yet, so they are currency rather than materials.
+- **Prosperity and loyalty are static.** They feed the levy but nothing grows or
+  erodes them, so a held region never improves or rebels.
+- **Companies do not recover.** A mauled company stays mauled; there is no
+  reinforcing it short of disbanding and raising afresh.
+- **The six trade metals still have no smithing lines.** They arm companies now,
+  which is a use, but nothing is forged *from* them.
 - **Insight has one sink.** Tutors spend it; nothing else does.
+- **No siege distinction.** Engines are a stance modifier rather than a real
+  siege system, and holds have no walls to speak of.
 - **The worker boundary.** The engine is worker-ready but currently runs on the
   main thread via a fixed-timestep rAF loop.
 - Mastery trees, affixes on Legendary rolls, commissions, retinue training,

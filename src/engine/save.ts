@@ -60,6 +60,19 @@ const MIGRATIONS: Migration[] = [
     save['regions'] = regions
     return save
   },
+
+  // v3 -> v4: war. An existing save has no companies and no plan; the plan is
+  // filled in on load rather than here, since it needs uids off the save.
+  (save) => {
+    save['companies'] ??= []
+    save['battlePlan'] ??= []
+    save['battle'] ??= null
+    save['threats'] ??= []
+    save['atWarWith'] ??= []
+    save['musterTimer'] ??= 0
+    save['pendingSuccession'] ??= false
+    return save
+  },
 ]
 
 function openDb(): Promise<IDBDatabase> {
