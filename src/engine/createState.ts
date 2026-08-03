@@ -5,7 +5,7 @@ import { REGIONS, STARTING_REGIONS } from '@/content/regions'
 import { STARTING_GLYPHS } from '@/content/glyphs'
 import { addItem, nextUid } from './inventory'
 
-export const SAVE_VERSION = 1
+export const SAVE_VERSION = 2
 
 function blankSkills(): Record<SkillId, SkillState> {
   const out: Record<SkillId, SkillState> = {}
@@ -42,11 +42,16 @@ export function createState(seed = Math.floor(Math.random() * 0xffffffff), name 
           held: r.id === 'ashcombe',
           loyalty: r.id === 'ashcombe' ? 100 : 0,
           prosperity: r.id === 'ashcombe' ? 10 : 0,
+          // Home is fully drawn; the ring around it is sketched and wants
+          // finishing, which is the first thing a survey has to do.
+          surveyed: r.id === 'ashcombe' ? 1 : STARTING_REGIONS.includes(r.id) ? 0.45 : 0,
         },
       ]),
     ),
 
     knownGlyphs: [...STARTING_GLYPHS],
+    lore: [],
+    mapFragments: [],
     spells: [],
     gambits: [],
     combat: null,
@@ -113,6 +118,8 @@ export function succeed(state: GameState, heirName: string): GameState {
   // The world remembers even when the person does not.
   next.regions = structuredClone(state.regions)
   next.knownGlyphs = [...state.knownGlyphs]
+  next.lore = structuredClone(state.lore)
+  next.mapFragments = [...state.mapFragments]
   next.spells = structuredClone(state.spells)
   next.coin = Math.floor(state.coin * 0.5)
   next.insight = state.insight

@@ -12,13 +12,50 @@ npm run typecheck
 npm run build
 ```
 
+Live at **https://jgw2210.github.io/IdlerTest1/** (deployed from `main`).
+
 ## Status
 
 The **framework** is built and runs: the tick engine, offline catch-up, the
 skill system, the material ladder, the rune grammar, the gambit combat resolver,
-the hex map, succession, and persistence all work end to end. It is a working
-skeleton with real content in it, not a finished game — see *What is not built
-yet* below.
+the map, Archaeology and decipherment, surveying, succession, and persistence
+all work end to end. It is a working skeleton with real content in it, not a
+finished game — see *What is not built yet* below.
+
+## The map
+
+Ninety-one regions across five rings. Rings 0–3 (37 regions) are hand-authored;
+rings 4–5 (54) are the **Outlands**, generated from a fixed world seed into six
+named marches — so they validate, save and load exactly like authored content.
+
+Three levels of zoom, because "granular" had to mean two different things:
+
+| | |
+| --- | --- |
+| **The chart** | where in the world — hexes, drawn on vellum |
+| **The locale** | where in the valley — an inset plan with sites placed on it |
+| **The site** | how deep — layers you descend through |
+
+The chart is not a viewport. It is a **sheet your character is drawing**. Ground
+nobody has walked is blank paper, and how well a place is drawn depends on its
+own `surveyed` value *and* on Cartography level — outlines and names at 1, terrain
+symbols at 10, hachured relief and site marks at 22, roads at 34, compass rose
+at 46, ruled border and marginalia at 58. The sheet also fits what has been
+drawn rather than the whole world, so the view draws back as you explore and the
+world visibly widens.
+
+## Archaeology → Inscription → Runes → Cartography
+
+Archaeology no longer drops materials with extra steps. Dig sites have **strata**
+— deeper is older — and older strata yield older tablets. Inscription then opens
+a tablet, and what comes out feeds a different system each time:
+
+- a **glyph**, so the rune grammar gains a word (Second Age tablets reach level
+  22, Elder 46, First Age everything — the deepest words need the deepest digs)
+- a **lore** entry, so the setting explains itself
+- a **map fragment**, which inks in a region your survey has not reached
+
+That chain is why the depth layers exist at all.
 
 ## Decisions taken
 
@@ -77,12 +114,12 @@ Honest list, roughly in the order I would do them:
 
 - **The realm layer past its data model.** Regions carry loyalty, prosperity and
   ownership, and nothing yet reads them. Diplomacy, war and the Act II civil
-  skills are stubs.
-- **Scouting.** Ring 2 exists in the content and the Cartography gate is
-  defined, but nothing lifts the fog yet.
-- **Archaeology's real payload.** It yields items; it should yield *glyphs and
-  recipes*. The `learnGlyph` path exists and is not wired to excavation.
-- **Insight** is displayed and never earned.
+  skills are stubs — only Ashcombe is ever *held*, and nothing claims more.
+- **Tutors.** Aldermarch is described as the place that teaches things for money;
+  buying glyphs with Insight is not built, so decipherment is currently the only
+  route into the grammar.
+- **Recipes from tablets.** Decipherment gives glyphs, lore and map fragments,
+  but not the recipes the lore keeps alluding to.
 - **The worker boundary.** The engine is worker-ready but currently runs on the
   main thread via a fixed-timestep rAF loop.
 - Mastery trees, affixes on Legendary rolls, commissions, retinue training,

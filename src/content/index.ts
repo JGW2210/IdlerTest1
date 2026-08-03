@@ -1,9 +1,11 @@
 import { SKILL_BY_ID, SKILLS } from './skills'
 import { allItems, itemById } from './items'
 import { allRecipes, recipeById } from './recipes'
-import { REGIONS, REGION_BY_ID, findNode } from './regions'
+import { REGIONS, REGION_BY_ID, findNode, regionOfSite, hexDistance, ringOf } from './regions'
 import { GLYPHS, GLYPH_BY_ID } from './glyphs'
 import { FOES, FOE_BY_ID, TECHNIQUES, TECHNIQUE_BY_ID } from './foes'
+import { LORE } from './lore'
+import { TABLETS } from '@/engine/archaeology'
 
 export * from './skills'
 export * from './items'
@@ -12,6 +14,8 @@ export * from './recipes'
 export * from './regions'
 export * from './glyphs'
 export * from './foes'
+export * from './lore'
+export * from './siteKit'
 
 /**
  * Referential integrity check across the content packs.
@@ -55,17 +59,45 @@ export function validateContent(): string[] {
     if (r.inputs.length === 0) errors.push(`recipe ${r.id}: no inputs`)
   }
 
-  const seenNodes = new Set<string>()
+  const seenRegions = new Set<string>()
+  const seenCoords = new Set<string>()
+  const seenSites = new Set<string>()
+  const seenLayers = new Set<string>()
+
   for (const region of REGIONS) {
-    for (const n of region.nodes) {
-      if (seenNodes.has(n.id)) errors.push(`duplicate node id "${n.id}"`)
-      seenNodes.add(n.id)
-      requireSkill(n.skill, `node ${n.id}`)
-      for (const y of n.yields) requireItem(y.item, `node ${n.id} yield`)
-      for (const f of n.foes ?? []) {
-        if (!FOE_BY_ID[f]) errors.push(`node ${n.id}: unknown foe "${f}"`)
+    if (seenRegions.has(region.id)) errors.push(`duplicate region id "${region.id}"`)
+    seenRegions.add(region.id)
+
+    // Two regions on one hex would make the chart unrenderable and one of them
+    // unreachable, so this is worth catching at build time.
+    const coordKey = `${region.coord.q},${region.coord.r}`
+    if (seenCoords.has(coordKey)) errors.push(`region ${region.id}: coordinate ${coordKey} already occupied`)
+    seenCoords.add(coordKey)
+
+    if (region.sites.length === 0) errors.push(`region ${region.id}: no sites`)
+
+    for (const s of region.sites) {
+      if (seenSites.has(s.id)) errors.push(`duplicate site id "${s.id}"`)
+      seenSites.add(s.id)
+      requireSkill(s.skill, `site ${s.id}`)
+      if (s.layers.length === 0) errors.push(`site ${s.id}: no layers`)
+      if (s.pos.x < 0 || s.pos.x > 1 || s.pos.y < 0 || s.pos.y > 1) {
+        errors.push(`site ${s.id}: pos out of the 0..1 locale square`)
       }
-      if (n.yields.length === 0) errors.push(`node ${n.id}: no yields`)
+
+      let lastReq = -1
+      for (const l of s.layers) {
+        if (seenLayers.has(l.id)) errors.push(`duplicate layer id "${l.id}"`)
+        seenLayers.add(l.id)
+        for (const y of l.yields) requireItem(y.item, `layer ${l.id} yield`)
+        for (const f of l.foes ?? []) {
+          if (!FOE_BY_ID[f]) errors.push(`layer ${l.id}: unknown foe "${f}"`)
+        }
+        if (l.yields.length === 0) errors.push(`layer ${l.id}: no yields`)
+        // Depth must go down, or the UI's "descend" reads as a lie.
+        if (l.levelReq <= lastReq) errors.push(`layer ${l.id}: level requirement does not increase with depth`)
+        lastReq = l.levelReq
+      }
     }
   }
 
@@ -77,6 +109,20 @@ export function validateContent(): string[] {
 
   for (const g of GLYPHS) {
     if (g.kind === 'form' && g.power < 1) errors.push(`glyph ${g.id}: forms set the base power and must be >= 1`)
+  }
+
+  // Every glyph must be reachable from some tablet age, or it can never be
+  // learned and the grammar quietly has dead words in it.
+  const ceiling = Math.max(...TABLETS.map((t) => t.glyphCeiling))
+  for (const g of GLYPHS) {
+    if (g.levelReq > ceiling) errors.push(`glyph ${g.id}: level ${g.levelReq} is above every tablet's ceiling`)
+  }
+
+  // Same for lore: an age with no entries means tablets of that age roll an
+  // outcome that cannot pay out.
+  for (const t of TABLETS) {
+    if (!LORE.some((l) => l.age === t.age)) errors.push(`tablet ${t.item}: no lore of age "${t.age}"`)
+    if (!allItems().some((i) => i.id === t.item)) errors.push(`tablet ${t.item}: no such item`)
   }
 
   return errors
@@ -92,6 +138,9 @@ export const CONTENT = {
   regions: REGIONS,
   regionById: REGION_BY_ID,
   findNode,
+  regionOfSite,
+  hexDistance,
+  ringOf,
   glyphs: GLYPHS,
   glyphById: GLYPH_BY_ID,
   foes: FOES,

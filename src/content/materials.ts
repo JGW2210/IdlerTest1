@@ -138,7 +138,11 @@ export const RAW_MATERIALS: ItemDef[] = [
   { id: 'riverFish', name: 'River Fish', category: 'material', tier: 1, value: 4, stack: true },
 
   { id: 'potsherd', name: 'Potsherd', category: 'material', tier: 1, value: 2, stack: true, blurb: 'Worthless alone. Twenty of them are a floor plan.' },
-  { id: 'sealedTablet', name: 'Sealed Tablet', category: 'material', tier: 6, value: 400, stack: true, blurb: 'Unread for nine hundred years. Inscription will open it.' },
+  // The three tablet ages. Deeper strata yield older tablets, and older tablets
+  // carry the rarer glyphs — the whole reason to keep digging down.
+  { id: 'sealedTablet', name: 'Sealed Tablet', category: 'material', tier: 6, value: 400, stack: true, blurb: 'Second Age. Unread for nine hundred years, and Inscription will open it.' },
+  { id: 'elderTablet', name: 'Elder Tablet', category: 'material', tier: 9, value: 2400, stack: true, blurb: 'Elder Age. The script runs the wrong way and the stone resists the chisel.' },
+  { id: 'firstAgeTablet', name: 'First Age Tablet', category: 'material', tier: 12, value: 14000, stack: true, blurb: 'First Age. Older than the language anyone still speaks, and warm to the touch.' },
   { id: 'blankTablet', name: 'Blank Rune Tablet', category: 'material', tier: 3, value: 60, stack: true, blurb: 'Argentine-faced slate, waiting for a sentence.' },
 ]
 

@@ -1,10 +1,12 @@
-import type { Assignment, GameState, RetinueMember, WorldNodeDef } from './types'
+import type { Assignment, GameState, RetinueMember, SiteLayer } from './types'
 import type { Rng } from './rng'
 import {
   RETINUE_RATE, SECONDS_PER_YEAR, TICK_SECONDS, actionTime, rollQuality,
 } from './curves'
 import { effectiveLevel, grantXp, levelOf } from './skills'
-import { addItem, consumeInputs, hasInputs, toolSpeedFor } from './inventory'
+import { addItem, consumeInputs, countItem, hasInputs, toolSpeedFor } from './inventory'
+import { survey, surveyTime, surveyXp } from './survey'
+import { TABLET_BY_ITEM, decipher, describeOutcome } from './archaeology'
 import { refreshTechniques, startCombat, tickCombat } from './combat'
 import { settleExpectation, randInt, pickWeighted, stream } from './rng'
 import { findNode } from '@/content/regions'
@@ -93,11 +95,11 @@ function runAssignment(
   if (assignment.kind === 'node') {
     const found = assignment.node ? findNode(assignment.node) : undefined
     if (!found) return
-    const { node } = found
+    const { site: siteDef, layer: node } = found
 
-    // Hunt and delve nodes hand off to the combat resolver rather than a yield
+    // Hunt and delve layers hand off to the combat resolver rather than a yield
     // table; the focused character fights, the retinue only gathers.
-    if ((node.activity === 'hunt' || node.activity === 'delve') && !member) {
+    if ((siteDef.activity === 'hunt' || siteDef.activity === 'delve') && !member) {
       if (!state.combat && node.foes?.length) {
         const foe = node.foes[Math.floor(rng() * node.foes.length)]
         if (foe && FOE_BY_ID[foe]) startCombat(state, foe)
@@ -105,17 +107,73 @@ function runAssignment(
       return
     }
 
-    const level = effectiveLevel(state, node.skill)
+    const level = effectiveLevel(state, siteDef.skill)
     if (level < node.levelReq) return
 
-    const perAction = actionTime(node.baseTime, level, toolSpeedFor(state, node.skill)) / rate
+    const perAction = actionTime(node.baseTime, level, toolSpeedFor(state, siteDef.skill)) / rate
     assignment.progress += dt
     const completions = Math.floor(assignment.progress / perAction)
     if (completions <= 0) return
     assignment.progress -= completions * perAction
 
-    grantXpTracked(state, node.skill, node.xp * completions, report)
+    grantXpTracked(state, siteDef.skill, node.xp * completions, report)
     grantYields(state, node, completions, mode, rng, report, member !== null)
+    return
+  }
+
+  if (assignment.kind === 'survey') {
+    const perAction = surveyTime(state) / rate
+    assignment.progress += dt
+
+    let done = 0
+    const cap = Math.floor(assignment.progress / perAction)
+    for (let i = 0; i < cap; i++) {
+      const result = survey(state, rng)
+      // Blocked means the frontier needs a higher Cartography than we have.
+      if (result.kind === 'blocked') break
+      done += 1
+      grantXpTracked(state, 'cartography', surveyXp(state), report)
+      if (result.kind === 'discovery') {
+        state.log.push({ t: state.elapsed, text: `Surveyed and named: ${result.name}.` })
+      }
+    }
+
+    assignment.progress -= done * perAction
+    // Hold at most one action's worth while blocked: the pending survey fires
+    // the moment Cartography rises, without banking hours of unusable time.
+    if (done < cap) assignment.progress = Math.min(assignment.progress, perAction)
+    return
+  }
+
+  if (assignment.kind === 'decipher') {
+    // Retinue members are labourers, not scholars.
+    if (member) return
+    const item = assignment.tablet
+    const def = item ? TABLET_BY_ITEM[item] : undefined
+    if (!def) return
+    if (levelOf(state, 'inscription') < def.levelReq) return
+    if (countItem(state, def.item) <= 0) {
+      assignment.progress = Math.min(assignment.progress, actionTime(def.baseTime, levelOf(state, 'inscription')))
+      return
+    }
+
+    const perAction = actionTime(def.baseTime, effectiveLevel(state, 'inscription')) / rate
+    assignment.progress += dt
+
+    let opened = 0
+    const cap = Math.floor(assignment.progress / perAction)
+    for (let i = 0; i < cap; i++) {
+      if (countItem(state, def.item) <= 0) break
+      const outcome = decipher(state, def.item, rng)
+      if (outcome.kind === 'nothing') break
+      opened += 1
+      grantXpTracked(state, 'inscription', def.xp, report)
+      grantXpTracked(state, 'archaeology', Math.round(def.xp * 0.35), report)
+      state.log.push({ t: state.elapsed, text: describeOutcome(outcome) })
+    }
+
+    assignment.progress -= opened * perAction
+    if (opened < cap) assignment.progress = Math.min(assignment.progress, perAction)
     return
   }
 
@@ -167,7 +225,7 @@ function grantXpTracked(state: GameState, skill: string, amount: number, report:
  */
 function grantYields(
   state: GameState,
-  node: WorldNodeDef,
+  node: SiteLayer,
   completions: number,
   mode: TickMode,
   rng: Rng,
@@ -213,10 +271,11 @@ function grantYields(
 
 export function assignFocus(state: GameState, assignment: Assignment): void {
   state.focus = { ...assignment, progress: 0 }
+  // Walking away from a fight ends it; only a hunt or delve layer sustains one.
   if (assignment.kind !== 'node') state.combat = null
   else {
     const found = assignment.node ? findNode(assignment.node) : undefined
-    if (!found || (found.node.activity !== 'hunt' && found.node.activity !== 'delve')) state.combat = null
+    if (!found || (found.site.activity !== 'hunt' && found.site.activity !== 'delve')) state.combat = null
   }
 }
 
@@ -230,12 +289,18 @@ export function currentActionTime(state: GameState, assignment: Assignment): num
   if (assignment.kind === 'node' && assignment.node) {
     const found = findNode(assignment.node)
     if (!found) return null
-    return actionTime(found.node.baseTime, effectiveLevel(state, found.node.skill), toolSpeedFor(state, found.node.skill))
+    return actionTime(found.layer.baseTime, effectiveLevel(state, found.site.skill), toolSpeedFor(state, found.site.skill))
   }
   if (assignment.kind === 'recipe' && assignment.recipe) {
     const r = recipeById(assignment.recipe)
     if (!r) return null
     return actionTime(r.baseTime, effectiveLevel(state, r.skill))
+  }
+  if (assignment.kind === 'survey') return surveyTime(state)
+  if (assignment.kind === 'decipher' && assignment.tablet) {
+    const def = TABLET_BY_ITEM[assignment.tablet]
+    if (!def) return null
+    return actionTime(def.baseTime, effectiveLevel(state, 'inscription'))
   }
   return null
 }

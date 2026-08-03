@@ -129,32 +129,68 @@ export interface AxialCoord { q: number; r: number }
 
 export type NodeActivity = 'gather' | 'hunt' | 'delve' | 'excavate' | 'trade'
 
-export interface WorldNodeDef {
+/**
+ * One workable layer of a site. Sites have depth: a mine has galleries, a barrow
+ * has floors, a dig has strata. Descending is a progression track *inside* a
+ * place, so a region you unlocked at level 12 still has something to offer at 60.
+ *
+ * `Assignment.node` always names a layer, never a site, so the engine only ever
+ * has one kind of thing to work on.
+ */
+export interface SiteLayer {
   id: NodeId
   name: string
-  activity: NodeActivity
-  skill: SkillId
   levelReq: number
   /** Seconds per action at level 1. */
   baseTime: number
   xp: number
   /** Weighted yield table. Rolled per completed action. */
   yields: { item: ItemId; qty: [number, number]; weight: number }[]
-  /** Foes present for `hunt` and `delve` nodes. */
+  /** Foes present on `hunt` and `delve` sites. */
   foes?: FoeId[]
+  /**
+   * Excavation only: how old this layer is, in ages. Deeper strata are older,
+   * and older strata yield older tablets — which carry the rarer glyphs.
+   */
+  strata?: number
   blurb?: string
 }
+
+export type SiteIcon =
+  | 'village' | 'town' | 'mine' | 'tree' | 'field' | 'cave' | 'ruin'
+  | 'water' | 'camp' | 'tower' | 'barrow' | 'shrine' | 'market'
+
+export interface SiteDef {
+  id: string
+  name: string
+  activity: NodeActivity
+  skill: SkillId
+  /** Position within the region's locale inset, both axes 0..1. */
+  pos: { x: number; y: number }
+  icon: SiteIcon
+  layers: SiteLayer[]
+  blurb?: string
+}
+
+export type Terrain =
+  | 'village' | 'forest' | 'mountain' | 'plains' | 'cavern' | 'town' | 'ruin'
+  | 'marsh' | 'coast' | 'moor' | 'waste' | 'unknown'
 
 export interface RegionDef {
   id: RegionId
   name: string
   coord: AxialCoord
-  terrain: 'village' | 'forest' | 'mountain' | 'plains' | 'cavern' | 'town' | 'ruin' | 'unknown'
+  terrain: Terrain
   /** 0 = safe. Feeds combat difficulty and, in Act II, garrison requirements. */
   danger: number
-  nodes: WorldNodeDef[]
-  /** Scouting cost in Cartography levels before ring 2 opens. */
+  sites: SiteDef[]
+  /** Cartography level a survey needs before this region can be found. */
   scoutLevelReq?: number
+  /** Ring 4+ regions are generated rather than authored; flagged so the UI can
+   *  say so and so the chart can draw them in a less certain hand. */
+  outland?: boolean
+  /** Named province, for the outer rings. */
+  province?: string
   blurb?: string
 }
 
@@ -164,6 +200,18 @@ export interface RegionState {
   held: boolean
   loyalty: number
   prosperity: number
+  /** How thoroughly this region has been surveyed, 0..1. Drives how much detail
+   *  the chart renders for it — a half-surveyed hex is drawn in a vaguer hand. */
+  surveyed: number
+}
+
+/** A deciphered inscription. The lore log is Archaeology's other reward. */
+export interface LoreEntry {
+  id: string
+  title: string
+  text: string
+  /** Simulated seconds at which it was read. */
+  foundAt: number
 }
 
 // ---------------------------------------------------------------------- runes
@@ -291,10 +339,18 @@ export interface CombatState {
  * hiring a villager to fill one is how the civilisation layer begins.
  */
 export interface Assignment {
-  kind: 'node' | 'recipe' | 'idle'
+  /**
+   * `survey` walks the frontier and inks in a new region; `decipher` opens a
+   * sealed tablet. Both are ordinary timed work so the retinue can be set to
+   * them and offline catch-up handles them without a special case.
+   */
+  kind: 'node' | 'recipe' | 'survey' | 'decipher' | 'idle'
+  /** A site *layer* id, never a site id. */
   node?: NodeId
   region?: RegionId
   recipe?: RecipeId
+  /** Which sealed tablet a `decipher` assignment is working on. */
+  tablet?: ItemId
   /** Seconds accumulated toward the next completion. */
   progress: number
 }
@@ -355,6 +411,10 @@ export interface GameState {
   regions: Record<RegionId, RegionState>
 
   knownGlyphs: GlyphId[]
+  /** Deciphered inscriptions, newest last. */
+  lore: LoreEntry[]
+  /** Regions revealed by a tablet's map fragment rather than by survey. */
+  mapFragments: RegionId[]
   spells: Spell[]
   gambits: GambitRule[]
   combat: CombatState | null

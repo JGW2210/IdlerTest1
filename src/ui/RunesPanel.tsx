@@ -3,6 +3,7 @@ import { useGame } from '@/state/store'
 import { GLYPHS, glyphsOfKind } from '@/content/glyphs'
 import { MAX_MODIFIERS, canInscribe, glyphCapacity, resolveSpell, tabletCapacity } from '@/engine/runes'
 import { levelOf } from '@/engine/skills'
+import { availableTablets } from '@/engine/archaeology'
 import type { GlyphDef, Spell } from '@/engine/types'
 
 /**
@@ -53,6 +54,7 @@ export function RunesPanel() {
   useGame((s) => s.revision)
   const inscribe = useGame((s) => s.inscribeSpell)
   const removeSpell = useGame((s) => s.removeSpell)
+  const setFocus = useGame((s) => s.setFocus)
 
   const [element, setElement] = useState('fire')
   const [form, setForm] = useState('bolt')
@@ -62,6 +64,7 @@ export function RunesPanel() {
   if (!state) return null
 
   const known = new Set(state.knownGlyphs)
+  const tabletStock = availableTablets(state)
   const draft: Spell = { uid: 'draft', name: '', element, form, modifiers: mods, trigger }
   const resolved = resolveSpell(draft)
   const check = canInscribe(state, draft)
@@ -160,15 +163,78 @@ export function RunesPanel() {
 
       <div className="card" style={{ marginTop: '0.85rem' }}>
         <header>
-          <div style={{ fontFamily: 'var(--serif)', fontWeight: 600 }}>Glyphs known</div>
-          <span className="eyebrow">{state.knownGlyphs.length}/{GLYPHS.length}</span>
+          <div style={{ fontFamily: 'var(--serif)', fontWeight: 600 }}>The Decipherment Bench</div>
+          <span className="eyebrow">glyphs are found, not bought</span>
         </header>
-        <div className="inner chips">
-          {GLYPHS.map((g) => (
-            <span key={g.id} className="chip" style={{ cursor: 'default', opacity: known.has(g.id) ? 1 : 0.35 }}>
-              {known.has(g.id) ? g.name : '???'}
-            </span>
-          ))}
+        <div className="inner">
+          <p style={{ margin: '0 0 0.75rem', color: 'var(--text-2)', fontSize: '0.85rem', maxWidth: '68ch' }}>
+            Excavation brings up sealed tablets. Opening one gives a glyph, an inscription worth
+            reading, or a map fragment that names somewhere your chart does not. Older tablets come
+            from deeper strata and carry the rarer words.
+          </p>
+
+          <div className="grid g2">
+            {tabletStock.map(({ def, held, unlocked }) => {
+              const working = state.focus.kind === 'decipher' && state.focus.tablet === def.item
+              return (
+                <div key={def.item} className="item" style={{ opacity: unlocked ? 1 : 0.45 }}>
+                  <div className="nm">
+                    <span>{def.name}</span>
+                    <small>
+                      {held} held · Inscription {def.levelReq} · glyphs to level {def.glyphCeiling}
+                    </small>
+                  </div>
+                  <button
+                    className={`btn tiny ${working || !unlocked || held === 0 ? '' : 'primary'}`}
+                    disabled={!unlocked || held === 0}
+                    onClick={() => setFocus({ kind: 'decipher', tablet: def.item, progress: 0 })}
+                  >
+                    {!unlocked ? `Level ${def.levelReq}` : held === 0 ? 'None held' : working ? 'Reading' : 'Decipher'}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', marginTop: '0.85rem' }}>
+        <div className="card">
+          <header>
+            <div style={{ fontFamily: 'var(--serif)', fontWeight: 600 }}>Glyphs known</div>
+            <span className="eyebrow">{state.knownGlyphs.length}/{GLYPHS.length}</span>
+          </header>
+          <div className="inner chips">
+            {GLYPHS.map((g) => (
+              <span
+                key={g.id}
+                className="chip"
+                style={{ cursor: 'default', opacity: known.has(g.id) ? 1 : 0.35 }}
+                title={known.has(g.id) ? g.clause : 'Undiscovered'}
+              >
+                {known.has(g.id) ? g.name : '???'}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="card">
+          <header>
+            <div style={{ fontFamily: 'var(--serif)', fontWeight: 600 }}>What the tablets said</div>
+            <span className="eyebrow">{state.lore.length} read</span>
+          </header>
+          <div className="inner" style={{ maxHeight: '22rem', overflowY: 'auto' }}>
+            {state.lore.length === 0 ? (
+              <p className="empty">Nothing deciphered yet.</p>
+            ) : (
+              [...state.lore].reverse().map((l) => (
+                <div key={l.id} className="lore">
+                  <b>{l.title}</b>
+                  <p>{l.text}</p>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

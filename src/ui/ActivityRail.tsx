@@ -2,6 +2,7 @@ import { useGame } from '@/state/store'
 import { findNode } from '@/content/regions'
 import { recipeById } from '@/content/recipes'
 import { currentActionTime } from '@/engine/tick'
+import { TABLET_BY_ITEM } from '@/engine/archaeology'
 import { RETINUE_RATE } from '@/engine/curves'
 import type { Assignment, GameState } from '@/engine/types'
 
@@ -18,11 +19,16 @@ import type { Assignment, GameState } from '@/engine/types'
 function describe(state: GameState, a: Assignment): { what: string; where: string } {
   if (a.kind === 'node' && a.node) {
     const found = findNode(a.node)
-    if (found) return { what: found.node.name, where: found.region.name }
+    if (found) return { what: found.layer.name, where: `${found.site.name}, ${found.region.name}` }
   }
   if (a.kind === 'recipe' && a.recipe) {
     const r = recipeById(a.recipe)
     if (r) return { what: r.name, where: 'Workshop' }
+  }
+  if (a.kind === 'survey') return { what: 'Surveying', where: 'The frontier' }
+  if (a.kind === 'decipher' && a.tablet) {
+    const def = TABLET_BY_ITEM[a.tablet]
+    if (def) return { what: `Deciphering a ${def.name}`, where: 'The scriptorium' }
   }
   void state
   return { what: 'Idle', where: 'Nothing assigned' }

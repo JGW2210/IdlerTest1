@@ -20,6 +20,38 @@ type Migration = (save: Record<string, unknown>) => Record<string, unknown>
 const MIGRATIONS: Migration[] = [
   // v0 -> v1: nothing shipped before v1; placeholder that keeps the shape honest.
   (save) => save,
+
+  // v1 -> v2: the map gained rings 3-5, sites gained depth layers, and
+  // Archaeology gained lore and map fragments.
+  (save) => {
+    save['lore'] ??= []
+    save['mapFragments'] ??= []
+    save['uidCounter'] ??= 0
+
+    // Region ids are unchanged, but every RegionState needs the new survey
+    // field, and the regions added in this version need entries at all.
+    const regions = (save['regions'] ?? {}) as Record<string, Record<string, unknown>>
+    for (const rs of Object.values(regions)) {
+      rs['surveyed'] ??= rs['discovered'] ? 0.45 : 0
+    }
+    save['regions'] = regions
+
+    // Site layer ids replaced the old flat node ids wholesale, so any focus or
+    // retinue assignment pointing at one is now dangling. Clear it rather than
+    // leaving the player staring at a slot that silently does nothing.
+    const clearNode = (a: Record<string, unknown> | undefined) => {
+      if (a && a['kind'] === 'node') {
+        a['kind'] = 'idle'
+        delete a['node']
+        a['progress'] = 0
+      }
+    }
+    clearNode(save['focus'] as Record<string, unknown> | undefined)
+    for (const m of (save['retinue'] ?? []) as Record<string, unknown>[]) {
+      clearNode(m['assignment'] as Record<string, unknown> | undefined)
+    }
+    return save
+  },
 ]
 
 function openDb(): Promise<IDBDatabase> {
