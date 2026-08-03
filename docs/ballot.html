@@ -200,7 +200,7 @@
   }
 
   @media (max-width: 720px) {
-    .sect { grid-template-columns: 1fr; gap: 0; }
+    .sect { grid-template-columns: minmax(0, 1fr); gap: 0; }
     .sect .rail { border-top: 2px solid var(--ink); padding-bottom: 0.75rem; }
     .sect .bay { border-top: 0; padding-top: 0; }
   }
@@ -291,7 +291,7 @@
   .finding p + p { margin-top: 0.6rem; }
 
   @media (max-width: 720px) {
-    .finding { grid-template-columns: 1fr; }
+    .finding { grid-template-columns: minmax(0, 1fr); }
   }
 
   /* ---------- rune composer ---------- */
@@ -305,7 +305,7 @@
     border: 1px solid var(--rule);
     border-radius: 2px;
   }
-  @media (max-width: 860px) { .rune { grid-template-columns: 1fr; } }
+  @media (max-width: 860px) { .rune { grid-template-columns: minmax(0, 1fr); } }
 
   .rune-in, .rune-out { background: var(--surface); padding: 1.15rem 1.25rem; }
   .rune-out { background: var(--raised); }
@@ -524,6 +524,30 @@
   }
   .opt .dsc { font-size: 0.875rem; color: var(--ink-2); line-height: 1.5; margin-top: 0.12rem; max-width: 70ch; }
 
+  .resolved-note {
+    border: 1px solid var(--accent);
+    border-left-width: 3px;
+    border-radius: 2px;
+    background: var(--accent-w);
+    padding: 0.75rem 0.9rem;
+    max-width: 68ch;
+  }
+  .resolved-note p:last-child { margin: 0; font-size: 0.9375rem; color: var(--ink-2); }
+  .resolved-note b { color: var(--ink); font-weight: 650; }
+
+  .chosen {
+    font-family: var(--mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ground);
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 2px;
+    padding: 0.1rem 0.38rem;
+    white-space: nowrap;
+  }
+
   .rec {
     font-family: var(--mono);
     font-size: 0.5625rem;
@@ -538,7 +562,7 @@
   }
 
   @media (max-width: 720px) {
-    .article { grid-template-columns: 1fr; }
+    .article { grid-template-columns: minmax(0, 1fr); }
     .article .num { padding-bottom: 0.4rem; }
   }
 
@@ -612,14 +636,18 @@
 <div class="wrap">
 
   <header class="masthead">
-    <p class="eyebrow">Design charter &amp; decision ballot — draft 01</p>
+    <p class="eyebrow">Design charter &amp; decision ballot — resolved</p>
     <h1>Ashcombe<span class="sub">An idle realm, begun with one villager and a borrowed pick</span></h1>
-    <p class="standfirst">Twelve decisions stand between this brief and a working framework. Below is what I found when I pulled the brief apart, what I would build, and where I need you to choose.</p>
+    <p class="standfirst">Twelve decisions stood between this brief and a working framework. Below is what I found when I pulled the brief apart, what I proposed, and — marked throughout — what was chosen.</p>
     <div class="colophon">
       <span><b>Repo</b> IdlerTest1</span>
       <span><b>Scope</b> Web app framework</span>
-      <span><b>Open questions</b> 12</span>
-      <span><b>Status</b> Nothing built yet</span>
+      <span><b>Ballot</b> 12 of 12 resolved</span>
+      <span><b>Status</b> Framework built</span>
+    </div>
+    <div class="resolved-note">
+      <p class="eyebrow" style="margin-bottom:0.3rem">Outcome</p>
+      <p>Every recommendation carried except <b>XII</b>, where <b>Dark Arcane Slate</b> was chosen over the Assay Ledger look of this page — the right call for a screen people sit in front of for hours rather than read once. The framework is built against these choices; the options are kept below so the reasoning stays legible.</p>
     </div>
   </header>
 
@@ -786,7 +814,7 @@
       <div id="ballot"></div>
 
       <div class="tally">
-        <p class="eyebrow" style="flex:0 0 auto">Your picks</p>
+        <p class="eyebrow" style="flex:0 0 auto">Ballot</p>
         <div class="out empty" id="tallyOut">Nothing selected yet</div>
         <button class="btn ghost" id="fillRec" type="button">Take recommended</button>
         <button class="btn ghost" id="clearAll" type="button">Clear</button>
@@ -1158,7 +1186,14 @@
   ];
 
   var LETTERS = ["A", "B", "C", "D"];
-  var votes = {};
+
+  /* The ballot as returned. The framework is built against these. */
+  var CHOSEN = {
+    I: "I-B", II: "II-A", III: "III-A", IV: "IV-A", V: "V-A", VI: "VI-B",
+    VII: "VII-B", VIII: "VIII-A", IX: "IX-A", X: "X-A", XI: "XI-A", XII: "XII-C"
+  };
+
+  var votes = Object.assign({}, CHOSEN);
 
   function renderBallot() {
     var host = document.getElementById("ballot");
@@ -1191,9 +1226,11 @@
         b.dataset.article = art.n;
         b.dataset.code = code;
         b.setAttribute("aria-pressed", votes[art.n] === code ? "true" : "false");
+        var pills = (CHOSEN[art.n] === code ? ' <span class="chosen">Chosen</span>' : '')
+          + (o[2] ? ' <span class="rec">Recommended</span>' : '');
         b.innerHTML =
           '<span class="code">' + code + '</span>' +
-          '<span><span class="ttl">' + o[0] + (o[2] ? ' <span class="rec">Recommended</span>' : '') + '</span>' +
+          '<span><span class="ttl">' + o[0] + pills + '</span>' +
           '<span class="dsc">' + o[1] + '</span></span>';
         b.addEventListener("click", function () {
           votes[art.n] = (votes[art.n] === code) ? undefined : code;
