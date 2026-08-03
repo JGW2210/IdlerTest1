@@ -13,17 +13,41 @@ import { CombatPanel } from '@/ui/CombatPanel'
 import { RealmPanel } from '@/ui/RealmPanel'
 import { ActivityRail } from '@/ui/ActivityRail'
 
-type Tab = 'map' | 'skills' | 'pack' | 'craft' | 'runes' | 'gambits' | 'realm'
+type Tab = 'map' | 'skills' | 'pack' | 'craft' | 'runes' | 'gambits' | 'realm' | 'work'
 
-const TABS: { id: Tab; label: string; ico: string }[] = [
-  { id: 'map', label: 'Cantref', ico: '⬡' },
-  { id: 'skills', label: 'Skills', ico: '◈' },
-  { id: 'pack', label: 'Pack', ico: '▤' },
-  { id: 'craft', label: 'Workshop', ico: '⚒' },
-  { id: 'runes', label: 'Runic Arts', ico: '✦' },
-  { id: 'gambits', label: 'Gambits', ico: '⚔' },
-  { id: 'realm', label: 'Holding', ico: '⌂' },
+const TABS: { id: Tab; label: string; short: string; ico: string }[] = [
+  { id: 'map', label: 'Cantref', short: 'Chart', ico: '⬡' },
+  { id: 'skills', label: 'Skills', short: 'Skills', ico: '◈' },
+  { id: 'pack', label: 'Pack', short: 'Pack', ico: '▤' },
+  { id: 'craft', label: 'Workshop', short: 'Craft', ico: '⚒' },
+  { id: 'runes', label: 'Runic Arts', short: 'Runes', ico: '✦' },
+  { id: 'gambits', label: 'Gambits', short: 'Fight', ico: '⚔' },
+  { id: 'realm', label: 'Holding', short: 'Hold', ico: '⌂' },
 ]
+
+/** Shown only when the rail is hidden, so the core loop stays reachable. */
+const WORK_TAB = { id: 'work' as Tab, label: 'Work', short: 'Work', ico: '◐' }
+
+/**
+ * Whether the activity rail has been hidden by the layout. Below 1100px there is
+ * no room for a third column, so its contents move into a tab instead — on a
+ * phone the focus, the retinue and the chronicle are the whole point, and
+ * dropping them was the actual bug rather than a cosmetic one.
+ */
+function useRailHidden(): boolean {
+  const query = '(max-width: 1100px)'
+  const [hidden, setHidden] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(query).matches,
+  )
+  useEffect(() => {
+    const mq = window.matchMedia(query)
+    const onChange = () => setHidden(mq.matches)
+    mq.addEventListener('change', onChange)
+    setHidden(mq.matches)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+  return hidden
+}
 
 function OfflineReport() {
   const offline = useGame((s) => s.offline)
@@ -136,8 +160,15 @@ export default function App() {
   const ready = useGame((s) => s.ready)
   const error = useGame((s) => s.error)
   const [tab, setTab] = useState<Tab>('map')
+  const railHidden = useRailHidden()
+  const tabs = railHidden ? [...TABS, WORK_TAB] : TABS
 
   useEffect(() => { void boot() }, [boot])
+
+  // Widening the window puts the rail back; the Work tab goes with it.
+  useEffect(() => {
+    if (!railHidden && tab === 'work') setTab('map')
+  }, [railHidden, tab])
 
   if (!ready) {
     return (
@@ -155,10 +186,10 @@ export default function App() {
       <TopBar />
       <div className="body">
         <nav className="side">
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <button key={t.id} className={tab === t.id ? 'on' : ''} onClick={() => setTab(t.id)}>
               <span className="ico">{t.ico}</span>
-              <span className="txt">{t.label}</span>
+              <span className="txt">{railHidden ? t.short : t.label}</span>
             </button>
           ))}
         </nav>
@@ -176,6 +207,16 @@ export default function App() {
           {tab === 'runes' && <RunesPanel />}
           {tab === 'gambits' && <CombatPanel />}
           {tab === 'realm' && <RealmPanel />}
+          {tab === 'work' && (
+            <div>
+              <h1 className="page">Work</h1>
+              <p className="page-sub">
+                What is happening while you are elsewhere. One focused task at full rate, the
+                retinue in the background.
+              </p>
+              <div className="work-page"><ActivityRail /></div>
+            </div>
+          )}
         </main>
 
         <aside className="rail"><ActivityRail /></aside>

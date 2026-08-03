@@ -594,10 +594,12 @@ export function drawChart(ctx: CanvasRenderingContext2D, o: ChartOpts): HexCente
     ctx.textAlign = 'center'
     const label = sure < 0.35 ? '?' : region.name
     const style = `${sure < 0.6 ? 'italic ' : ''}600`
-    const maxWidth = size * 1.55
-    let nameSize = Math.max(8, Math.round(size * 0.26))
+    // The hex is 2*size across the middle but narrower down at the label's
+    // baseline, so fit to that narrower band or names cross into the next hex.
+    const maxWidth = size * 1.3
+    let nameSize = Math.max(7, Math.round(size * 0.26))
     ctx.font = `${style} ${nameSize}px Palatino, "Palatino Linotype", Georgia, serif`
-    while (nameSize > 8 && ctx.measureText(label).width > maxWidth) {
+    while (nameSize > 7 && ctx.measureText(label).width > maxWidth) {
       nameSize -= 1
       ctx.font = `${style} ${nameSize}px Palatino, "Palatino Linotype", Georgia, serif`
     }
